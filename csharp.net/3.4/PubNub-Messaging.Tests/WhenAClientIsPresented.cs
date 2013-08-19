@@ -27,18 +27,49 @@ namespace PubNubMessaging.Tests
         ManualResetEvent presenceUnsubscribeEvent = new ManualResetEvent(false);
         ManualResetEvent presenceUnsubscribeUUIDEvent = new ManualResetEvent(false);
 
+        ManualResetEvent grantManualEvent = new ManualResetEvent(false);
+
         static bool receivedPresenceMessage = false;
         static bool receivedHereNowMessage = false;
         static bool receivedCustomUUID = false;
+        static bool receivedGrantMessage = false;
 
         string customUUID = "mylocalmachine.mydomain.com";
 
+        [TestFixtureSetUp]
+        public void Init()
+        {
+            receivedGrantMessage = false;
+
+            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, PubnubKey.SecretKey, "", false);
+
+            PubnubUnitTest unitTest = new PubnubUnitTest();
+            unitTest.TestClassName = "WhenAClientIsPresented";
+            unitTest.TestCaseName = "Init";
+            pubnub.PubnubUnitTest = unitTest;
+
+            string channel = "hello_my_channel,hello_my_channel-pnpres";
+
+            pubnub.GrantAccess<string>(channel, true, true, 5, ThenPresenceInitializeShouldReturnGrantMessage, DummyErrorCallback);
+            Thread.Sleep(1000);
+
+            grantManualEvent.WaitOne();
+
+            Assert.IsTrue(receivedGrantMessage, "WhenAClientIsPresent Grant access failed.");
+        }
+
+        [TestFixtureTearDown]
+        public void Cleanup()
+        {
+
+        }
+    
         [Test]
         public void ThenPresenceShouldReturnReceivedMessage()
         {
             receivedPresenceMessage = false;
 
-            Pubnub pubnub = new Pubnub("demo", "demo", "", "", false);
+            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, "", "", false);
 
             PubnubUnitTest unitTest = new PubnubUnitTest();
             unitTest.TestClassName = "WhenAClientIsPresented";
@@ -71,7 +102,7 @@ namespace PubNubMessaging.Tests
         {
             receivedCustomUUID = false;
 
-            Pubnub pubnub = new Pubnub("demo", "demo", "", "", false);
+            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, "", "", false);
 
             PubnubUnitTest unitTest = new PubnubUnitTest();
             unitTest.TestClassName = "WhenAClientIsPresented";
@@ -105,7 +136,7 @@ namespace PubNubMessaging.Tests
         {
             receivedHereNowMessage = false;
 
-            Pubnub pubnub = new Pubnub("demo", "demo", "", "", false);
+            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, "", "", false);
             PubnubUnitTest unitTest = new PubnubUnitTest();
             unitTest.TestClassName = "WhenAClientIsPresented";
             unitTest.TestCaseName = "IfHereNowIsCalledThenItShouldReturnInfo";
@@ -116,6 +147,28 @@ namespace PubNubMessaging.Tests
             Assert.IsTrue(receivedHereNowMessage, "here_now message not received");
         }
 
+        void ThenPresenceInitializeShouldReturnGrantMessage(string receivedMessage)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(receivedMessage) && !string.IsNullOrEmpty(receivedMessage.Trim()))
+                {
+                    object[] serializedMessage = JsonConvert.DeserializeObject<object[]>(receivedMessage);
+                    JContainer dictionary = serializedMessage[0] as JContainer;
+                    var status = dictionary["status"].ToString();
+                    if (status == "200")
+                    {
+                        receivedGrantMessage = true;
+                    }
+                }
+            }
+            catch { }
+            finally
+            {
+                grantManualEvent.Set();
+            }
+        }
+        
         void ThenPresenceShouldReturnMessage(string receivedMessage)
         {
             try
