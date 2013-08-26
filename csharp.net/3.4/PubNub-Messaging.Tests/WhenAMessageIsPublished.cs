@@ -316,7 +316,7 @@ namespace PubNubMessaging.Tests
             string channel = "hello_my_channel";
             string message = messageLarge2K;
 
-            pubnub.Publish<string>(channel, message, ReturnPublishMessageTooLargeInfoCallback, DummyErrorCallback);
+            pubnub.Publish<string>(channel, message, DummyPublishMessageTooLargeInfoCallback, ReturnPublishMessageTooLargeErrorCallback);
             mreLaregMessagePublish.WaitOne(310 * 1000);
 
             Assert.IsTrue(isLargeMessagePublished, "Message Too Large is not failing as expected.");
@@ -568,14 +568,14 @@ namespace PubNubMessaging.Tests
             mreComplexObjectDetailedHistory.Set();
         }
 
-        private void ReturnPublishMessageTooLargeInfoCallback(string result)
+        private void ReturnPublishMessageTooLargeErrorCallback(string result)
         {
             if (!string.IsNullOrEmpty(result) && !string.IsNullOrEmpty(result.Trim()))
             {
                 object[] deserializedMessage = JsonConvert.DeserializeObject<object[]>(result);
                 if (deserializedMessage is object[])
                 {
-                    long statusCode = Int64.Parse(deserializedMessage[0].ToString());
+                    long statusCode = Int64.Parse(deserializedMessage[0].ToString().Trim());
                     string statusMessage = (string)deserializedMessage[1];
                     if (statusCode == 0 && statusMessage.ToLower() == "message too large")
                     {
@@ -584,6 +584,10 @@ namespace PubNubMessaging.Tests
                 }
             }
             mreLaregMessagePublish.Set();
+        }
+
+        private void DummyPublishMessageTooLargeInfoCallback(string result)
+        {
         }
 
         [Test]
@@ -728,6 +732,7 @@ namespace PubNubMessaging.Tests
 
             mreSerializedMessagePublishDetailedHistory.Set();
         }
+
 
         private void DummyErrorCallback(string result)
         {

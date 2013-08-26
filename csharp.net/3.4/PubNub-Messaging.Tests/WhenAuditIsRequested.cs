@@ -17,31 +17,59 @@ namespace PubNubMessaging.Tests
     {
         ManualResetEvent auditManualEvent = new ManualResetEvent(false);
         bool receivedAuditMessage = false;
+        string currentUnitTestCase = "";
 
         [Test]
         public void ThenSubKeyLevelShouldReturnSuccess()
         {
+            currentUnitTestCase = "ThenSubKeyLevelShouldReturnSuccess";
+
             receivedAuditMessage = false;
 
             Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, PubnubKey.SecretKey, "", false);
 
             PubnubUnitTest unitTest = new PubnubUnitTest();
             unitTest.TestClassName = "WhenAuditIsRequested";
-            unitTest.TestCaseName = "ThenAccessToSubKeyShouldReturnSuccess";
+            unitTest.TestCaseName = "ThenSubKeyLevelShouldReturnSuccess";
             pubnub.PubnubUnitTest = unitTest;
 
             string channel = "hello_my_channel";
 
-            pubnub.GrantAccess<string>(channel, true, true, 5, AccessToSubKeyCallback, DummyErrorCallback);
+            pubnub.GrantAccess<string>(channel, true, true, 5, AccessToSubKeyLevelCallback, DummyErrorCallback);
             Thread.Sleep(1000);
 
             auditManualEvent.WaitOne();
 
-            Assert.IsTrue(receivedAuditMessage, "WhenAuditIsRequested -> ThenAccessToSubKeyShouldReturnSuccess failed.");
+            Assert.IsTrue(receivedAuditMessage, "WhenAuditIsRequested -> ThenSubKeyLevelShouldReturnSuccess failed.");
 
         }
 
-        void AccessToSubKeyCallback(string receivedMessage)
+        [Test]
+        public void ThenChannelLevelShouldReturnSuccess()
+        {
+            currentUnitTestCase = "ThenChannelLevelShouldReturnSuccess";
+
+            receivedAuditMessage = false;
+
+            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, PubnubKey.SecretKey, "", false);
+
+            PubnubUnitTest unitTest = new PubnubUnitTest();
+            unitTest.TestClassName = "WhenAuditIsRequested";
+            unitTest.TestCaseName = "ThenChannelLevelShouldReturnSuccess";
+            pubnub.PubnubUnitTest = unitTest;
+
+            string channel = "hello_my_channel";
+
+            pubnub.GrantAccess<string>(channel, true, true, 5, AccessToSubKeyLevelCallback, DummyErrorCallback);
+            Thread.Sleep(1000);
+
+            auditManualEvent.WaitOne();
+
+            Assert.IsTrue(receivedAuditMessage, "WhenAuditIsRequested -> ThenChannelLevelShouldReturnSuccess failed.");
+
+        }
+
+        void AccessToSubKeyLevelCallback(string receivedMessage)
         {
             try
             {
@@ -49,10 +77,102 @@ namespace PubNubMessaging.Tests
                 {
                     object[] serializedMessage = JsonConvert.DeserializeObject<object[]>(receivedMessage);
                     JContainer dictionary = serializedMessage[0] as JContainer;
-                    var status = dictionary["status"].ToString();
-                    if (status == "200")
+                    if (dictionary != null)
                     {
-                        receivedAuditMessage = true;
+                        int statusCode = dictionary.Value<int>("status");
+                        string statusMessage = dictionary.Value<string>("message");
+                        if (statusCode == 200 && statusMessage.ToLower() == "success")
+                        {
+                            var payload = dictionary.Value<JContainer>("payload");
+                            if (payload != null)
+                            {
+                                bool read = payload.Value<bool>("r");
+                                bool write = payload.Value<bool>("w");
+                                string level = payload.Value<string>("level");
+                                if (level == "subkey")
+                                {
+                                    switch (currentUnitTestCase)
+                                    {
+                                        case "ThenSubKeyLevelWithReadWriteShouldReturnSuccess":
+                                            if (read && write) receivedAuditMessage = true;
+                                            break;
+                                        case "ThenSubKeyLevelWithReadShouldReturnSuccess":
+                                            if (read && !write) receivedAuditMessage = true;
+                                            break;
+                                        case "ThenSubKeyLevelWithWriteShouldReturnSuccess":
+                                            if (!read && write) receivedAuditMessage = true;
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+
+                        //if (dictionary.
+                        //if (status == "200")
+                        //{
+                        //    receivedGrantMessage = true;
+                        //}
+                    }
+                    //var level = dictionary["level"].ToString();
+                }
+            }
+            catch { }
+            finally
+            {
+                auditManualEvent.Set();
+            }
+        }
+
+        void AccessToChannelLevelCallback(string receivedMessage)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(receivedMessage) && !string.IsNullOrEmpty(receivedMessage.Trim()))
+                {
+                    object[] serializedMessage = JsonConvert.DeserializeObject<object[]>(receivedMessage);
+                    JContainer dictionary = serializedMessage[0] as JContainer;
+                    string currentChannel = serializedMessage[1].ToString();
+                    if (dictionary != null)
+                    {
+                        int statusCode = dictionary.Value<int>("status");
+                        string statusMessage = dictionary.Value<string>("message");
+                        if (statusCode == 200 && statusMessage.ToLower() == "success")
+                        {
+                            var payload = dictionary.Value<JContainer>("payload");
+                            if (payload != null)
+                            {
+                                string level = payload.Value<string>("level");
+                                var channels = payload.Value<JContainer>("channels");
+                                if (channels != null)
+                                {
+                                    var channelContainer = channels.Value<JContainer>(currentChannel);
+                                    if (channelContainer != null)
+                                    {
+                                        bool read = channelContainer.Value<bool>("r");
+                                        bool write = channelContainer.Value<bool>("w");
+                                        if (level == "channel")
+                                        {
+                                            switch (currentUnitTestCase)
+                                            {
+                                                case "ThenChannelLevelWithReadWriteShouldReturnSuccess":
+                                                    if (read && write) receivedAuditMessage = true;
+                                                    break;
+                                                case "ThenChannelLevelWithReadShouldReturnSuccess":
+                                                    if (read && !write) receivedAuditMessage = true;
+                                                    break;
+                                                case "ThenChannelLevelWithWriteShouldReturnSuccess":
+                                                    if (!read && write) receivedAuditMessage = true;
+                                                    break;
+                                                default:
+                                                    break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

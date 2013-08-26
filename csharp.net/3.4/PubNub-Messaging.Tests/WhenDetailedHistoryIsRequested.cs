@@ -207,7 +207,7 @@ namespace PubNubMessaging.Tests
                                     actualCountAtStartTimeWithReverseFalse++;
                                 }
                             }
-                            if (actualCountAtStartTimeWithReverseFalse == expectedCountAtStartTimeWithReverseTrue)
+                            if (actualCountAtStartTimeWithReverseFalse >= expectedCountAtStartTimeWithReverseTrue)
                             {
                                 messageStartReverseTrue = true;
                             }

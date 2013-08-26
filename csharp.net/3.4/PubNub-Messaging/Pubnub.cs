@@ -269,8 +269,8 @@ namespace PubNubMessaging.Core
 		private static long lastSubscribeTimetoken = 0;
 		
 		// Pubnub Core API implementation
-		//private string _origin = "pubsub.pubnub.com";
-        private string _origin = "pres-beta.pubnub.com";//"50.112.215.116";//"pam-beta.pubnub.com"; //;"uls-test.pubnub.co"; //"pam-beta.pubnub.com";
+		private string _origin = "pubsub.pubnub.com";
+        //private string _origin = "pres-beta.pubnub.com";//"50.112.215.116";//"pam-beta.pubnub.com"; //;"uls-test.pubnub.co"; //"pam-beta.pubnub.com";
         public string Origin
         {
             get
@@ -552,7 +552,7 @@ namespace PubNubMessaging.Core
 		{
 			if (state != null && state.Request != null)
 			{
-				state.Request.Abort();
+                state.Request.Abort();
 				LoggingMethod.WriteToLog(string.Format("DateTime {0} TerminatePendingWebRequest {1}", DateTime.Now.ToString(), state.Request.RequestUri.ToString()), LoggingMethod.LevelInfo);
 			}
 			else
@@ -563,7 +563,7 @@ namespace PubNubMessaging.Core
 					PubnubWebRequest currentRequest = _channelRequest[key];
 					if (currentRequest != null)
 					{
-						currentRequest.Abort();
+                        currentRequest.Abort();
 						LoggingMethod.WriteToLog(string.Format("DateTime {0} TerminatePendingWebRequest {1}", DateTime.Now.ToString(), currentRequest.RequestUri.ToString()), LoggingMethod.LevelInfo);
 					}
 				}
@@ -988,12 +988,22 @@ namespace PubNubMessaging.Core
 					{
 						LoggingMethod.WriteToLog(string.Format("DateTime {0}, Aborting previous subscribe/presence requests having channel(s)={1}", DateTime.Now.ToString(), multiChannelName), LoggingMethod.LevelInfo);
 						PubnubWebRequest webRequest = _channelRequest[multiChannelName];
-						_channelRequest[multiChannelName] = null;
+                        webRequest.Abort();
+                        _channelRequest[multiChannelName] = null;
 						
 						TerminateHeartbeatTimer(webRequest.RequestUri);
 						
 						PubnubWebRequest removedRequest;
 						_channelRequest.TryRemove(multiChannelName, out removedRequest);
+                        bool removedChannel = _channelRequest.TryRemove(multiChannelName, out removedRequest);
+                        if (removedChannel)
+                        {
+                            LoggingMethod.WriteToLog(string.Format("DateTime {0}, Success to remove channel(s)={1} from _channelRequest (MultiChannelSubscribeInit).", DateTime.Now.ToString(), multiChannelName), LoggingMethod.LevelInfo);
+                        }
+                        else
+                        {
+                            LoggingMethod.WriteToLog(string.Format("DateTime {0}, Unable to remove channel(s)={1} from _channelRequest (MultiChannelSubscribeInit).", DateTime.Now.ToString(), multiChannelName), LoggingMethod.LevelInfo);
+                        }
 						webRequest.Abort();
 					}
 					else
@@ -1085,12 +1095,21 @@ namespace PubNubMessaging.Core
 					{
 						LoggingMethod.WriteToLog(string.Format("DateTime {0}, Aborting previous subscribe/presence requests having channel(s)={1}", DateTime.Now.ToString(), multiChannelName), LoggingMethod.LevelInfo);
 						PubnubWebRequest webRequest = _channelRequest[multiChannelName];
-						_channelRequest[multiChannelName] = null;
+                        webRequest.Abort();
+                        _channelRequest[multiChannelName] = null;
 						
 						TerminateHeartbeatTimer(webRequest.RequestUri);
 						
 						PubnubWebRequest removedRequest;
-						_channelRequest.TryRemove(multiChannelName, out removedRequest);
+                        bool removedChannel = _channelRequest.TryRemove(multiChannelName, out removedRequest);
+                        if (removedChannel)
+                        {
+                            LoggingMethod.WriteToLog(string.Format("DateTime {0}, Success to remove channel(s)={1} from _channelRequest (MultiChannelUnSubscribeInit).", DateTime.Now.ToString(), multiChannelName), LoggingMethod.LevelInfo);
+                        }
+                        else
+                        {
+                            LoggingMethod.WriteToLog(string.Format("DateTime {0}, Unable to remove channel(s)={1} from _channelRequest (MultiChannelUnSubscribeInit).", DateTime.Now.ToString(), multiChannelName), LoggingMethod.LevelInfo);
+                        }
 						webRequest.Abort();
 					}
 					else
@@ -2338,7 +2357,7 @@ namespace PubNubMessaging.Core
 			PubnubWebRequest asyncWebRequest = asynchRequestState.Request as PubnubWebRequest;
 			try
 			{
-				if (asyncWebRequest != null)
+                if (asyncWebRequest != null)
 				{
 					using (PubnubWebResponse asyncWebResponse = (PubnubWebResponse)asyncWebRequest.EndGetResponse(asynchronousResult))
 					{
@@ -2396,10 +2415,10 @@ namespace PubNubMessaging.Core
 				{
                     LoggingMethod.WriteToLog(string.Format("DateTime {0}, Request aborted for channel={1}", DateTime.Now.ToString(), channel), LoggingMethod.LevelInfo);
 				}
-				
-				ProcessResponseCallbacks<T>(result, asynchRequestState);
-				
-				if ((asynchRequestState.Type == ResponseType.Subscribe || asynchRequestState.Type == ResponseType.Presence) && (asynchRequestState.Channels != null))
+
+                ProcessResponseCallbacks<T>(result, asynchRequestState);
+
+                if ((asynchRequestState.Type == ResponseType.Subscribe || asynchRequestState.Type == ResponseType.Presence) && (asynchRequestState.Channels != null) && (result.Count > 0))
 				{
 					foreach (string currentChannel in asynchRequestState.Channels)
 					{
@@ -2446,8 +2465,9 @@ namespace PubNubMessaging.Core
 
                         }
                     }
-                    else
+                    else if (asynchRequestState.Type != ResponseType.Publish)
                     {
+                        //TODO: Need to review this "else if" block
                         List<object> errorResult = new List<object>();
                         string jsonString = string.Format("[2, \"{0}\"]", webEx.ToString().Replace("\r\n", " ").Replace("\r", " ").Replace("\n", " ").Replace("\\", "\\\\").Replace("\"", "\\\""));
 
@@ -2487,12 +2507,23 @@ namespace PubNubMessaging.Core
 								TerminateHeartbeatTimer(asyncWebRequest.RequestUri);
 							}
 
+                            //if (((int)currentStatusCode < 200 || (int)currentStatusCode >= 300) && ((int)currentStatusCode != 400))
                             if ((int)currentStatusCode < 200 || (int)currentStatusCode >= 300)
                             {
                                 result = null;
                                 List<object> errorResult = new List<object>();
-                                Dictionary<string, object> dictionary = _jsonPluggableLibrary.DeserializeToDictionaryOfObject(jsonString);
-                                errorResult.Add(dictionary);
+                                
+                                if (jsonString.Substring(0, 1) == "{")
+                                {
+                                    var messageObject = _jsonPluggableLibrary.DeserializeToDictionaryOfObject(jsonString);
+                                    errorResult.Add(messageObject);
+                                }
+                                else 
+                                {
+                                    //for non-json error object format
+                                    errorResult = WrapResultBasedOnResponseType(asynchRequestState.Type, jsonString, asynchRequestState.Channels, asynchRequestState.Reconnect, asynchRequestState.Timetoken, asynchRequestState.ErrorCallback);
+                                }
+
                                 //errorResult.Add(channel);
                                 GoToCallback<T>(errorResult, asynchRequestState.ErrorCallback);
                                 //result = errorResult;
@@ -4857,6 +4888,7 @@ namespace PubNubMessaging.Core
 	{
 		private IPubnubUnitTest pubnubUnitTest = null;
 		private static bool simulateNetworkFailForTesting = false;
+        private bool terminated = false;
 		
 		HttpWebRequest request;
 		
@@ -4939,7 +4971,8 @@ namespace PubNubMessaging.Core
 		{
 			if (request != null)
 			{
-				request.Abort();
+                terminated = true;
+                request.Abort();
 			}
 		}
 		
@@ -5038,7 +5071,14 @@ namespace PubNubMessaging.Core
 				return request.RequestUri;
 			}
 		}
-	}
+        public bool Terminated
+        {
+            get
+            {
+                return terminated;
+            }
+        }
+    }
 	
 	public class PubnubWebResponse : WebResponse
 	{
