@@ -18,6 +18,8 @@ namespace PubNubMessaging.Tests
 
         ManualResetEvent grantManualEvent = new ManualResetEvent(false);
         bool receivedGrantMessage = false;
+        int multipleChannelGrantCount = 100;
+        int multipleAuthGrantCount = 100;
         string currentUnitTestCase = "";
 
         [Test]
@@ -236,6 +238,79 @@ namespace PubNubMessaging.Tests
             Assert.IsTrue(receivedGrantMessage, "WhenGrantIsRequested -> ThenUserLevelWithWriteShouldReturnSuccess failed.");
         }
 
+        [Test]
+        public void ThenMultipleChannelGrantShouldReturnSuccess()
+        {
+            currentUnitTestCase = "ThenMultipleChannelGrantShouldReturnSuccess";
+
+            receivedGrantMessage = false;
+
+            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, PubnubKey.SecretKey, "", false);
+
+            PubnubUnitTest unitTest = new PubnubUnitTest();
+            unitTest.TestClassName = "WhenGrantIsRequested";
+            unitTest.TestCaseName = "ThenMultipleChannelGrantShouldReturnSuccess";
+            pubnub.PubnubUnitTest = unitTest;
+
+            StringBuilder channelBuilder = new StringBuilder();
+            for (int index = 0; index < multipleChannelGrantCount; index++)
+            {
+                if (index == multipleChannelGrantCount - 1)
+                {
+                    channelBuilder.AppendFormat("csharp-hello_my_channel-{0}", index);
+                }
+                else
+                {
+                    channelBuilder.AppendFormat("csharp-hello_my_channel-{0},", index);
+                }
+            }
+            string channel = channelBuilder.ToString();
+
+            pubnub.GrantAccess<string>(channel, true, true, 5, AccessToMultiChannelGrantCallback, DummyErrorCallback);
+            Thread.Sleep(1000);
+
+            grantManualEvent.WaitOne();
+
+            Assert.IsTrue(receivedGrantMessage, "WhenGrantIsRequested -> ThenMultipleChannelGrantShouldReturnSuccess failed.");
+        }
+
+        [Test]
+        public void ThenMultipleAuthGrantShouldReturnSuccess()
+        {
+            currentUnitTestCase = "ThenMultipleAuthGrantShouldReturnSuccess";
+
+            receivedGrantMessage = false;
+
+            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, PubnubKey.SecretKey, "", false);
+
+            PubnubUnitTest unitTest = new PubnubUnitTest();
+            unitTest.TestClassName = "WhenGrantIsRequested";
+            unitTest.TestCaseName = "ThenMultipleAuthGrantShouldReturnSuccess";
+            pubnub.PubnubUnitTest = unitTest;
+
+            StringBuilder authKeyBuilder = new StringBuilder();
+            for (int index = 0; index < multipleAuthGrantCount; index++)
+            {
+                if (index == multipleAuthGrantCount - 1)
+                {
+                    authKeyBuilder.AppendFormat("csharp-auth_key-{0}", index);
+                }
+                else
+                {
+                    authKeyBuilder.AppendFormat("csharp-auth_key-{0},", index);
+                }
+            }
+            string channel = "hello_my_channel";
+
+            pubnub.AuthenticationKey = authKeyBuilder.ToString();
+            pubnub.GrantAccess<string>(channel, true, true, 5, AccessToMultiAuthGrantCallback, DummyErrorCallback);
+            Thread.Sleep(1000);
+
+            grantManualEvent.WaitOne();
+
+            Assert.IsTrue(receivedGrantMessage, "WhenGrantIsRequested -> ThenMultipleAuthGrantShouldReturnSuccess failed.");
+        }
+
         void AccessToSubKeyLevelCallback(string receivedMessage)
         {
             try
@@ -407,6 +482,87 @@ namespace PubNubMessaging.Tests
 
                                             }
                                         }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            finally
+            {
+                grantManualEvent.Set();
+            }
+        }
+
+        void AccessToMultiChannelGrantCallback(string receivedMessage)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(receivedMessage) && !string.IsNullOrEmpty(receivedMessage.Trim()))
+                {
+                    object[] serializedMessage = JsonConvert.DeserializeObject<object[]>(receivedMessage);
+                    JContainer dictionary = serializedMessage[0] as JContainer;
+                    string currentChannel = serializedMessage[1].ToString();
+                    if (dictionary != null)
+                    {
+                        int statusCode = dictionary.Value<int>("status");
+                        string statusMessage = dictionary.Value<string>("message");
+                        if (statusCode == 200 && statusMessage.ToLower() == "success")
+                        {
+                            var payload = dictionary.Value<JContainer>("payload");
+                            if (payload != null)
+                            {
+                                string level = payload.Value<string>("level");
+                                var channels = payload.Value<JContainer>("channels");
+                                if (channels != null)
+                                {
+                                    Console.WriteLine("{0} - AccessToMultiChannelGrantCallback - Grant MultiChannel Count (Received/Sent) = {1}/{2}", currentUnitTestCase, channels.Count, multipleChannelGrantCount);
+                                    if (channels.Count == multipleChannelGrantCount)
+                                    {
+                                        receivedGrantMessage = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            finally
+            {
+                grantManualEvent.Set();
+            }
+        }
+
+        void AccessToMultiAuthGrantCallback(string receivedMessage)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(receivedMessage) && !string.IsNullOrEmpty(receivedMessage.Trim()))
+                {
+                    object[] serializedMessage = JsonConvert.DeserializeObject<object[]>(receivedMessage);
+                    JContainer dictionary = serializedMessage[0] as JContainer;
+                    string currentChannel = serializedMessage[1].ToString();
+                    if (dictionary != null)
+                    {
+                        int statusCode = dictionary.Value<int>("status");
+                        string statusMessage = dictionary.Value<string>("message");
+                        if (statusCode == 200 && statusMessage.ToLower() == "success")
+                        {
+                            var payload = dictionary.Value<JContainer>("payload");
+                            if (payload != null)
+                            {
+                                string level = payload.Value<string>("level");
+                                string channel = payload.Value<string>("channel");
+                                var auths = payload.Value<JContainer>("auths");
+                                if (auths != null)
+                                {
+                                    Console.WriteLine("{0} - AccessToMultiAuthGrantCallback - Grant Auth Count (Received/Sent) = {1}/{2}", currentUnitTestCase, auths.Count, multipleAuthGrantCount);
+                                    if (auths.Count == multipleAuthGrantCount)
+                                    {
+                                        receivedGrantMessage = true;
                                     }
                                 }
                             }

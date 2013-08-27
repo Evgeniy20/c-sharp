@@ -33,9 +33,7 @@ namespace PubNubMessaging.Tests
             unitTest.TestCaseName = "ThenSubKeyLevelShouldReturnSuccess";
             pubnub.PubnubUnitTest = unitTest;
 
-            string channel = "hello_my_channel";
-
-            pubnub.GrantAccess<string>(channel, true, true, 5, AccessToSubKeyLevelCallback, DummyErrorCallback);
+            pubnub.AuditAccess<string>(AccessToSubKeyLevelCallback, DummyErrorCallback);
             Thread.Sleep(1000);
 
             auditManualEvent.WaitOne();
@@ -60,7 +58,7 @@ namespace PubNubMessaging.Tests
 
             string channel = "hello_my_channel";
 
-            pubnub.GrantAccess<string>(channel, true, true, 5, AccessToSubKeyLevelCallback, DummyErrorCallback);
+            pubnub.AuditAccess<string>(channel, AccessToChannelLevelCallback, DummyErrorCallback);
             Thread.Sleep(1000);
 
             auditManualEvent.WaitOne();
@@ -88,34 +86,20 @@ namespace PubNubMessaging.Tests
                             {
                                 bool read = payload.Value<bool>("r");
                                 bool write = payload.Value<bool>("w");
+                                var channels = payload.Value<JContainer>("channels");
+                                if (channels != null)
+                                {
+                                    Console.WriteLine("{0} - AccessToSubKeyLevelCallback - Audit Count = {1}",currentUnitTestCase, channels.Count);
+                                }
                                 string level = payload.Value<string>("level");
                                 if (level == "subkey")
                                 {
-                                    switch (currentUnitTestCase)
-                                    {
-                                        case "ThenSubKeyLevelWithReadWriteShouldReturnSuccess":
-                                            if (read && write) receivedAuditMessage = true;
-                                            break;
-                                        case "ThenSubKeyLevelWithReadShouldReturnSuccess":
-                                            if (read && !write) receivedAuditMessage = true;
-                                            break;
-                                        case "ThenSubKeyLevelWithWriteShouldReturnSuccess":
-                                            if (!read && write) receivedAuditMessage = true;
-                                            break;
-                                        default:
-                                            break;
-                                    }
+                                    receivedAuditMessage = true;
                                 }
                             }
                         }
 
-                        //if (dictionary.
-                        //if (status == "200")
-                        //{
-                        //    receivedGrantMessage = true;
-                        //}
                     }
-                    //var level = dictionary["level"].ToString();
                 }
             }
             catch { }
@@ -147,29 +131,11 @@ namespace PubNubMessaging.Tests
                                 var channels = payload.Value<JContainer>("channels");
                                 if (channels != null)
                                 {
-                                    var channelContainer = channels.Value<JContainer>(currentChannel);
-                                    if (channelContainer != null)
-                                    {
-                                        bool read = channelContainer.Value<bool>("r");
-                                        bool write = channelContainer.Value<bool>("w");
-                                        if (level == "channel")
-                                        {
-                                            switch (currentUnitTestCase)
-                                            {
-                                                case "ThenChannelLevelWithReadWriteShouldReturnSuccess":
-                                                    if (read && write) receivedAuditMessage = true;
-                                                    break;
-                                                case "ThenChannelLevelWithReadShouldReturnSuccess":
-                                                    if (read && !write) receivedAuditMessage = true;
-                                                    break;
-                                                case "ThenChannelLevelWithWriteShouldReturnSuccess":
-                                                    if (!read && write) receivedAuditMessage = true;
-                                                    break;
-                                                default:
-                                                    break;
-                                            }
-                                        }
-                                    }
+                                    Console.WriteLine("{0} - AccessToChannelLevelCallback - Audit Channel Count = {1}", currentUnitTestCase, channels.Count);
+                                }
+                                if (level == "channel")
+                                {
+                                    receivedAuditMessage = true;
                                 }
                             }
                         }

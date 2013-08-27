@@ -24,6 +24,7 @@ namespace PubNubMessaging.Tests
         ManualResetEvent meChannel2SubscribeConnect = new ManualResetEvent(false);
         ManualResetEvent meSubscriberManyMessages = new ManualResetEvent(false);
         ManualResetEvent grantManualEvent = new ManualResetEvent(false);
+        ManualResetEvent subscribeEvent = new ManualResetEvent(false);
 
         bool receivedMessage = false;
         bool receivedConnectMessage = false;
@@ -177,6 +178,7 @@ namespace PubNubMessaging.Tests
 
             pubnub.Subscribe<string>(channel, SubscriberDummyMethodForManyMessagesUserCallback, SubscribeDummyMethodForManyMessagesConnectCallback, DummyErrorCallback);
             Thread.Sleep(1000);
+            subscribeEvent.WaitOne();
             if (!unitTest.EnableStubTest)
             {
                 for (int index = 0; index < 10; index++)
@@ -227,6 +229,7 @@ namespace PubNubMessaging.Tests
 
         private void SubscribeDummyMethodForManyMessagesConnectCallback(string result)
         {
+            subscribeEvent.Set();
         }
 
         private void ReceivedChannelUserCallback(string result)
