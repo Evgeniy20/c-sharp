@@ -28,18 +28,20 @@ namespace PubNubMessaging.Tests
         [TestFixtureSetUp]
         public void Init()
         {
+            if (!PubnubCommon.PAMEnabled) return;
+
             receivedGrantMessage = false;
 
-            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, PubnubKey.SecretKey, "", false);
+            Pubnub pubnub = new Pubnub(PubnubCommon.PublishKey, PubnubCommon.SubscribeKey, PubnubCommon.SecretKey, "", false);
 
             PubnubUnitTest unitTest = new PubnubUnitTest();
-            unitTest.TestClassName = "WhenSubscribedToAChannel";
+            unitTest.TestClassName = "GrantRequestUnitTest";
             unitTest.TestCaseName = "Init";
             pubnub.PubnubUnitTest = unitTest;
 
             string channel = "hello_my_channel";
 
-            pubnub.GrantAccess<string>(channel, true, true, 5, ThenUnsubscribeInitializeShouldReturnGrantMessage, DummyErrorCallback);
+            pubnub.GrantAccess<string>(channel, true, true, 20, ThenUnsubscribeInitializeShouldReturnGrantMessage, DummyErrorCallback);
             Thread.Sleep(1000);
 
             grantManualEvent.WaitOne();
@@ -51,7 +53,7 @@ namespace PubNubMessaging.Tests
         public void ThenNoExistChannelShouldReturnNotSubscribed()
         {
             receivedNotSubscribedMessage = false;
-            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, "", "", false);
+            Pubnub pubnub = new Pubnub(PubnubCommon.PublishKey, PubnubCommon.SubscribeKey, "", "", false);
 
             PubnubUnitTest unitTest = new PubnubUnitTest();
             unitTest.TestClassName = "WhenUnsubscribedToAChannel";
@@ -76,7 +78,7 @@ namespace PubNubMessaging.Tests
             receivedChannelConnectedMessage = false;
             receivedUnsubscribedMessage = false;
 
-            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, "", "", false);
+            Pubnub pubnub = new Pubnub(PubnubCommon.PublishKey, PubnubCommon.SubscribeKey, "", "", false);
 
             PubnubUnitTest unitTest = new PubnubUnitTest();
             unitTest.TestClassName = "WhenUnsubscribedToAChannel";

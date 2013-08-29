@@ -274,6 +274,118 @@ namespace PubNubMessaging.Tests
             return data;
         }
 
+        private Dictionary<string, string> LoadWhenAuditIsRequestedThenSubKeyLevelShouldReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/audit/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{},\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"level\":\"subkey\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/audit/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{},\"subscribe_key\":\"demo\",\"level\":\"subkey\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
+        private Dictionary<string, string> LoadWhenAuditIsRequestedThenChannelLevelShouldReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/audit/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{},\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"level\":\"channel\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/audit/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{},\"subscribe_key\":\"demo\",\"level\":\"channel\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
+        private Dictionary<string, string> LoadWhenGrantIsRequestedThenSubKeyLevelWithReadWriteShouldReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/grant/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"r\":1,\"ttl\":5,\"w\":1,\"level\":\"subkey\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/grant/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"subscribe_key\":\"demo\",\"r\":1,\"ttl\":5,\"w\":1,\"level\":\"subkey\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
+        private Dictionary<string, string> LoadWhenGrantIsRequestedThenSubKeyLevelWithReadShouldReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/grant/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"r\":1,\"ttl\":5,\"w\":0,\"level\":\"subkey\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/grant/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"subscribe_key\":\"demo\",\"r\":1,\"ttl\":5,\"w\":0,\"level\":\"subkey\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
+        private Dictionary<string, string> LoadWhenGrantIsRequestedThenSubKeyLevelWithWriteShouldReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/grant/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"r\":0,\"ttl\":5,\"w\":1,\"level\":\"subkey\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/grant/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"subscribe_key\":\"demo\",\"r\":0,\"ttl\":5,\"w\":1,\"level\":\"subkey\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
+        private Dictionary<string, string> LoadWhenGrantIsRequestedThenChannelLevelWithReadWriteShouldReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/grant/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{\"hello_my_channel\":{\"r\":1,\"w\":1}},\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"level\":\"channel\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/grant/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{\"hello_my_channel\":{\"r\":1,\"w\":1}},\"subscribe_key\":\"demo\",\"level\":\"channel\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
+        private Dictionary<string, string> LoadWhenGrantIsRequestedThenChannelLevelWithReadShouldReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/grant/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{\"hello_my_channel\":{\"r\":1,\"w\":0}},\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"level\":\"channel\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/grant/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{\"hello_my_channel\":{\"r\":1,\"w\":0}},\"subscribe_key\":\"demo\",\"level\":\"channel\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
+        private Dictionary<string, string> LoadWhenGrantIsRequestedThenChannelLevelWithWriteShouldReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/grant/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{\"hello_my_channel\":{\"r\":0,\"w\":1}},\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"level\":\"channel\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/grant/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{\"hello_my_channel\":{\"r\":0,\"w\":1}},\"subscribe_key\":\"demo\",\"level\":\"channel\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
+        private Dictionary<string, string> LoadWhenGrantIsRequestedThenUserLevelWithReadWriteShouldReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/grant/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"ttl\":5,\"auths\":{\"hello_my_authkey\":{\"r\":1,\"w\":1}},\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"level\":\"user\",\"channel\":\"hello_my_authchannel\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/grant/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"ttl\":5,\"auths\":{\"hello_my_authkey\":{\"r\":1,\"w\":1}},\"subscribe_key\":\"demo\",\"level\":\"user\",\"channel\":\"hello_my_authchannel\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
+        private Dictionary<string, string> LoadWhenGrantIsRequestedThenUserLevelWithReadShouldReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/grant/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"ttl\":5,\"auths\":{\"hello_my_authkey\":{\"r\":1,\"w\":0}},\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"level\":\"user\",\"channel\":\"hello_my_authchannel\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/grant/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"ttl\":5,\"auths\":{\"hello_my_authkey\":{\"r\":1,\"w\":0}},\"subscribe_key\":\"demo\",\"level\":\"user\",\"channel\":\"hello_my_authchannel\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
+        private Dictionary<string, string> LoadWhenGrantIsRequestedThenUserLevelWithWriteShouldReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/grant/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"ttl\":5,\"auths\":{\"hello_my_authkey\":{\"r\":0,\"w\":1}},\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"level\":\"user\",\"channel\":\"hello_my_authchannel\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/grant/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"ttl\":5,\"auths\":{\"hello_my_authkey\":{\"r\":0,\"w\":1}},\"subscribe_key\":\"demo\",\"level\":\"user\",\"channel\":\"hello_my_authchannel\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
+        private Dictionary<string, string> LoadWhenGrantIsRequestedThenMultipleChannelGrantShouldReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/grant/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{\"csharp-hello_my_channel-4\":{\"r\":1,\"w\":1},\"csharp-hello_my_channel-1\":{\"r\":1,\"w\":1},\"csharp-hello_my_channel-0\":{\"r\":1,\"w\":1},\"csharp-hello_my_channel-3\":{\"r\":1,\"w\":1},\"csharp-hello_my_channel-2\":{\"r\":1,\"w\":1}},\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"ttl\":5,\"level\":\"channel\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/grant/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{\"csharp-hello_my_channel-4\":{\"r\":1,\"w\":1},\"csharp-hello_my_channel-1\":{\"r\":1,\"w\":1},\"csharp-hello_my_channel-0\":{\"r\":1,\"w\":1},\"csharp-hello_my_channel-3\":{\"r\":1,\"w\":1},\"csharp-hello_my_channel-2\":{\"r\":1,\"w\":1}},\"subscribe_key\":\"demo\",\"ttl\":5,\"level\":\"channel\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
+        private Dictionary<string, string> LoadWhenGrantIsRequestedThenMultipleAuthGrantShouldReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/grant/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"ttl\":5,\"auths\":{\"csharp-auth_key-2\":{\"r\":1,\"w\":1},\"csharp-auth_key-3\":{\"r\":1,\"w\":1},\"csharp-auth_key-0\":{\"r\":1,\"w\":1},\"csharp-auth_key-1\":{\"r\":1,\"w\":1},\"csharp-auth_key-4\":{\"r\":1,\"w\":1}},\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"level\":\"user\",\"channel\":\"hello_my_channel\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/grant/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"ttl\":5,\"auths\":{\"csharp-auth_key-2\":{\"r\":1,\"w\":1},\"csharp-auth_key-3\":{\"r\":1,\"w\":1},\"csharp-auth_key-0\":{\"r\":1,\"w\":1},\"csharp-auth_key-1\":{\"r\":1,\"w\":1},\"csharp-auth_key-4\":{\"r\":1,\"w\":1}},\"subscribe_key\":\"demo\",\"level\":\"user\",\"channel\":\"hello_my_channel\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
+        private Dictionary<string, string> LoadGrantRequestUnitTestInit()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/grant/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{\"hello_my_channel\":{\"r\":1,\"w\":1}},\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"level\":\"channel\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/grant/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{\"hello_my_channel\":{\"r\":1,\"w\":1}},\"subscribe_key\":\"demo\",\"level\":\"channel\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
         public string GetStubResponse(HttpWebRequest request)
         {
             Uri requestUri = request.RequestUri;
@@ -283,6 +395,16 @@ namespace PubNubMessaging.Tests
             System.Diagnostics.Debug.WriteLine(string.Format("{0} - {1}", _testClassName, _testCaseName));
             switch (_testClassName)
             {
+                case "GrantRequestUnitTest":
+                    switch (_testCaseName)
+                    {
+                        case "Init":
+                            responseDictionary = LoadGrantRequestUnitTestInit();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
                 case "WhenAClientIsPresented":
                     switch (_testCaseName)
                     {
@@ -392,6 +514,59 @@ namespace PubNubMessaging.Tests
                     {
                         case "ThenShouldReturnUnsubscribedMessage":
                             responseDictionary = LoadWhenUnsubscribedToAChannelThenShouldReturnUnsubscribedMessage();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "WhenAuditIsRequested":
+                    switch (_testCaseName)
+                    {
+                        case "ThenSubKeyLevelShouldReturnSuccess":
+                            responseDictionary = LoadWhenAuditIsRequestedThenSubKeyLevelShouldReturnSuccess();
+                            break;
+                        case "ThenChannelLevelShouldReturnSuccess":
+                            responseDictionary = LoadWhenAuditIsRequestedThenChannelLevelShouldReturnSuccess();
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "WhenGrantIsRequested":
+                    switch (_testCaseName)
+                    {
+                        case "ThenSubKeyLevelWithReadWriteShouldReturnSuccess":
+                            responseDictionary = LoadWhenGrantIsRequestedThenSubKeyLevelWithReadWriteShouldReturnSuccess();
+                            break;
+                        case "ThenSubKeyLevelWithReadShouldReturnSuccess":
+                            responseDictionary = LoadWhenGrantIsRequestedThenSubKeyLevelWithReadShouldReturnSuccess();
+                            break;
+                        case "ThenSubKeyLevelWithWriteShouldReturnSuccess":
+                            responseDictionary = LoadWhenGrantIsRequestedThenSubKeyLevelWithWriteShouldReturnSuccess();
+                            break;
+                        case "ThenChannelLevelWithReadWriteShouldReturnSuccess":
+                            responseDictionary = LoadWhenGrantIsRequestedThenChannelLevelWithReadWriteShouldReturnSuccess();
+                            break;
+                        case "ThenChannelLevelWithReadShouldReturnSuccess":
+                            responseDictionary = LoadWhenGrantIsRequestedThenChannelLevelWithReadShouldReturnSuccess();
+                            break;
+                        case "ThenChannelLevelWithWriteShouldReturnSuccess":
+                            responseDictionary = LoadWhenGrantIsRequestedThenChannelLevelWithWriteShouldReturnSuccess();
+                            break;
+                        case "ThenUserLevelWithReadWriteShouldReturnSuccess":
+                            responseDictionary = LoadWhenGrantIsRequestedThenUserLevelWithReadWriteShouldReturnSuccess();
+                            break;
+                        case "ThenUserLevelWithReadShouldReturnSuccess":
+                            responseDictionary = LoadWhenGrantIsRequestedThenUserLevelWithReadShouldReturnSuccess();
+                            break;
+                        case "ThenUserLevelWithWriteShouldReturnSuccess":
+                            responseDictionary = LoadWhenGrantIsRequestedThenUserLevelWithWriteShouldReturnSuccess();
+                            break;
+                        case "ThenMultipleChannelGrantShouldReturnSuccess":
+                            responseDictionary = LoadWhenGrantIsRequestedThenMultipleChannelGrantShouldReturnSuccess();
+                            break;
+                        case "ThenMultipleAuthGrantShouldReturnSuccess":
+                            responseDictionary = LoadWhenGrantIsRequestedThenMultipleAuthGrantShouldReturnSuccess();
                             break;
                         default:
                             break;

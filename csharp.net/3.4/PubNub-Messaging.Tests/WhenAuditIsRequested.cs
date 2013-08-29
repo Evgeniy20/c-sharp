@@ -26,19 +26,25 @@ namespace PubNubMessaging.Tests
 
             receivedAuditMessage = false;
 
-            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, PubnubKey.SecretKey, "", false);
+            Pubnub pubnub = new Pubnub(PubnubCommon.PublishKey, PubnubCommon.SubscribeKey, PubnubCommon.SecretKey, "", false);
 
             PubnubUnitTest unitTest = new PubnubUnitTest();
             unitTest.TestClassName = "WhenAuditIsRequested";
             unitTest.TestCaseName = "ThenSubKeyLevelShouldReturnSuccess";
             pubnub.PubnubUnitTest = unitTest;
+            if (PubnubCommon.PAMEnabled)
+            {
+                pubnub.AuditAccess<string>(AccessToSubKeyLevelCallback, DummyErrorCallback);
+                Thread.Sleep(1000);
 
-            pubnub.AuditAccess<string>(AccessToSubKeyLevelCallback, DummyErrorCallback);
-            Thread.Sleep(1000);
+                auditManualEvent.WaitOne();
 
-            auditManualEvent.WaitOne();
-
-            Assert.IsTrue(receivedAuditMessage, "WhenAuditIsRequested -> ThenSubKeyLevelShouldReturnSuccess failed.");
+                Assert.IsTrue(receivedAuditMessage, "WhenAuditIsRequested -> ThenSubKeyLevelShouldReturnSuccess failed.");
+            }
+            else
+            {
+                Assert.Ignore("PAM Not Enabled for WhenAuditIsRequested -> ThenSubKeyLevelShouldReturnSuccess");
+            }
 
         }
 
@@ -49,7 +55,7 @@ namespace PubNubMessaging.Tests
 
             receivedAuditMessage = false;
 
-            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, PubnubKey.SecretKey, "", false);
+            Pubnub pubnub = new Pubnub(PubnubCommon.PublishKey, PubnubCommon.SubscribeKey, PubnubCommon.SecretKey, "", false);
 
             PubnubUnitTest unitTest = new PubnubUnitTest();
             unitTest.TestClassName = "WhenAuditIsRequested";
@@ -58,13 +64,19 @@ namespace PubNubMessaging.Tests
 
             string channel = "hello_my_channel";
 
-            pubnub.AuditAccess<string>(channel, AccessToChannelLevelCallback, DummyErrorCallback);
-            Thread.Sleep(1000);
+            if (PubnubCommon.PAMEnabled)
+            {
+                pubnub.AuditAccess<string>(channel, AccessToChannelLevelCallback, DummyErrorCallback);
+                Thread.Sleep(1000);
 
-            auditManualEvent.WaitOne();
+                auditManualEvent.WaitOne();
 
-            Assert.IsTrue(receivedAuditMessage, "WhenAuditIsRequested -> ThenChannelLevelShouldReturnSuccess failed.");
-
+                Assert.IsTrue(receivedAuditMessage, "WhenAuditIsRequested -> ThenChannelLevelShouldReturnSuccess failed.");
+            }
+            else
+            {
+                Assert.Ignore("PAM Not Enabled for WhenAuditIsRequested -> ThenChannelLevelShouldReturnSuccess");
+            }
         }
 
         void AccessToSubKeyLevelCallback(string receivedMessage)

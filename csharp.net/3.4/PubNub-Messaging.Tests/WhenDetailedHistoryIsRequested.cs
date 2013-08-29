@@ -32,18 +32,20 @@ namespace PubNubMessaging.Tests
         [TestFixtureSetUp]
         public void Init()
         {
+            if (!PubnubCommon.PAMEnabled) return;
+
             receivedGrantMessage = false;
 
-            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, PubnubKey.SecretKey, "", false);
+            Pubnub pubnub = new Pubnub(PubnubCommon.PublishKey, PubnubCommon.SubscribeKey, PubnubCommon.SecretKey, "", false);
 
             PubnubUnitTest unitTest = new PubnubUnitTest();
-            unitTest.TestClassName = "WhenDetailedHistoryIsRequested";
+            unitTest.TestClassName = "GrantRequestUnitTest";
             unitTest.TestCaseName = "Init";
             pubnub.PubnubUnitTest = unitTest;
 
             string channel = "hello_my_channel";
 
-            pubnub.GrantAccess<string>(channel, true, true, 5, ThenDetailedHistoryInitializeShouldReturnGrantMessage, DummyErrorCallback);
+            pubnub.GrantAccess<string>(channel, true, true, 20, ThenDetailedHistoryInitializeShouldReturnGrantMessage, DummyErrorCallback);
             Thread.Sleep(1000);
 
             grantManualEvent.WaitOne();
@@ -56,7 +58,7 @@ namespace PubNubMessaging.Tests
         {
             message10Received = false;
 
-            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, "", "", false);
+            Pubnub pubnub = new Pubnub(PubnubCommon.PublishKey, PubnubCommon.SubscribeKey, "", "", false);
 
             PubnubUnitTest unitTest = new PubnubUnitTest();
             unitTest.TestClassName = "WhenDetailedHistoryIsRequested";
@@ -119,7 +121,7 @@ namespace PubNubMessaging.Tests
         {
             message10ReverseTrueReceived = false;
 
-            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, "", "", false);
+            Pubnub pubnub = new Pubnub(PubnubCommon.PublishKey, PubnubCommon.SubscribeKey, "", "", false);
 
             PubnubUnitTest unitTest = new PubnubUnitTest();
             unitTest.TestClassName = "WhenDetailedHistoryIsRequested";
@@ -160,7 +162,7 @@ namespace PubNubMessaging.Tests
         {
             expectedCountAtStartTimeWithReverseTrue = 0;
             messageStartReverseTrue = false;
-            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, "", "", false);
+            Pubnub pubnub = new Pubnub(PubnubCommon.PublishKey, PubnubCommon.SubscribeKey, "", "", false);
 
             PubnubUnitTest unitTest = new PubnubUnitTest();
             unitTest.TestClassName = "WhenDetailedHistoryIsRequested";

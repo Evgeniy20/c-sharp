@@ -23,7 +23,7 @@ namespace PubNubMessaging.Tests
         [Test]
         public void ThenItShouldReturnTimeStamp()
         {
-            Pubnub pubnub = new Pubnub(PubnubKey.PublishKey, PubnubKey.SubscribeKey, "", "", false);
+            Pubnub pubnub = new Pubnub(PubnubCommon.PublishKey, PubnubCommon.SubscribeKey, "", "", false);
 
             PubnubUnitTest unitTest = new PubnubUnitTest();
             unitTest.TestClassName = "WhenGetRequestServerTime";

@@ -269,8 +269,8 @@ namespace PubNubMessaging.Core
 		private static long lastSubscribeTimetoken = 0;
 		
 		// Pubnub Core API implementation
-		//private string _origin = "pubsub.pubnub.com";
-        private string _origin = "pres-beta.pubnub.com";//"50.112.215.116";//"pam-beta.pubnub.com"; //;"uls-test.pubnub.co"; //"pam-beta.pubnub.com";
+		private string _origin = "pubsub.pubnub.com";
+        //private string _origin = "pres-beta.pubnub.com";//"50.112.215.116";//"pam-beta.pubnub.com"; //;"uls-test.pubnub.co"; //"pam-beta.pubnub.com";
         public string Origin
         {
             get
@@ -2909,18 +2909,28 @@ namespace PubNubMessaging.Core
 
         private Uri BuildAuditAccessRequest(string channel)
         {
-            string signature = "0"; 
-            long timeStamp = TranslateDateTimeToSeconds(DateTime.UtcNow);
+            string signature = "0";
+            long timeStamp = (_pubnubUnitTest is IPubnubUnitTest && !_pubnubUnitTest.EnableStubTest) 
+                                    ? TranslateDateTimeToSeconds(DateTime.UtcNow) 
+                                    : TranslateDateTimeToSeconds(new DateTime(2013,01,01));
             string queryString="";
             StringBuilder queryStringBuilder = new StringBuilder();
             if (!string.IsNullOrEmpty(_authenticationKey))
             {
                 queryStringBuilder.AppendFormat("auth={0}", EncodeUricomponent(_authenticationKey, ResponseType.AuditAccess, false));
             }
+            //if (authLimit > 0)
+            //{
+            //    queryStringBuilder.AppendFormat("{0}auth_limit={1}", (queryStringBuilder.Length > 0) ? "&" : "", authLimit);
+            //}
             if (!string.IsNullOrEmpty(channel))
             {
                 queryStringBuilder.AppendFormat("{0}channel={1}", (queryStringBuilder.Length > 0) ? "&" : "", EncodeUricomponent(channel, ResponseType.AuditAccess, false));
             }
+            //if (channelLimit > 0)
+            //{
+            //    queryStringBuilder.AppendFormat("{0}channel_limit={1}", (queryStringBuilder.Length > 0) ? "&" : "", channelLimit);
+            //}
             queryStringBuilder.AppendFormat("{0}timestamp={1}", (queryStringBuilder.Length > 0) ? "&" : "", timeStamp.ToString());
 
             if (this.secretKey.Length > 0)

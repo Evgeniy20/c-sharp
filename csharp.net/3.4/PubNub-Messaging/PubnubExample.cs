@@ -508,7 +508,7 @@ namespace PubNubMessaging.Core
                         Console.WriteLine();
 
                         Console.WriteLine("Running PamAudit()");
-                        pubnub.AuditAccess<string>(channel, DisplayReturnMessage, DisplayErrorMessage);
+                        pubnub.AuditAccess<string>(channel,DisplayReturnMessage, DisplayErrorMessage);
                         break;
                     case "14":
                         Console.WriteLine("Enter CHANNEL name for PAM Revoke");
