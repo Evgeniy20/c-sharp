@@ -13,7 +13,7 @@ namespace PubNubMessaging.Tests
 {
     public class PubnubUnitTest : IPubnubUnitTest
     {
-        private bool enableStubTest = false;
+        private bool enableStubTest = PubnubCommon.EnableStubTest;
         private string _testClassName = "";
         private string _testCaseName = "";
 

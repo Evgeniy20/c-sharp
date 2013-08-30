@@ -35,6 +35,7 @@ namespace PubNubMessaging.Tests
         static bool receivedGrantMessage = false;
 
         string customUUID = "mylocalmachine.mydomain.com";
+        int manualResetEventsWaitTimeout = 310 * 1000;
 
         [TestFixtureSetUp]
         public void Init()
@@ -79,20 +80,20 @@ namespace PubNubMessaging.Tests
             pubnub.PubnubUnitTest = unitTest;
             
             string channel = "hello_my_channel";
-
+            manualResetEventsWaitTimeout = (unitTest.EnableStubTest) ? 1000 : 310 * 1000;
             pubnub.Presence<string>(channel, ThenPresenceShouldReturnMessage, PresenceDummyMethodForConnectCallback, DummyErrorCallback);
             Thread.Sleep(1000);
             
             //since presence expects from stimulus from sub/unsub...
             pubnub.Subscribe<string>(channel, DummyMethodForSubscribe, SubscribeDummyMethodForConnectCallback, DummyErrorCallback);
             Thread.Sleep(1000);
-            subscribeManualEvent.WaitOne(2000);
+            subscribeManualEvent.WaitOne(manualResetEventsWaitTimeout);
 
             pubnub.Unsubscribe<string>(channel, DummyMethodForUnSubscribe, UnsubscribeDummyMethodForConnectCallback, UnsubscribeDummyMethodForDisconnectCallback, DummyErrorCallback);
             Thread.Sleep(1000);
-            unsubscribeManualEvent.WaitOne(2000);
+            unsubscribeManualEvent.WaitOne(manualResetEventsWaitTimeout);
 
-            presenceManualEvent.WaitOne(310 * 1000);
+            presenceManualEvent.WaitOne(manualResetEventsWaitTimeout);
 
             pubnub.EndPendingRequests();
             
@@ -112,7 +113,7 @@ namespace PubNubMessaging.Tests
             pubnub.PubnubUnitTest = unitTest;
 
             string channel = "hello_my_channel";
-
+            manualResetEventsWaitTimeout = (unitTest.EnableStubTest) ? 1000 : 310 * 1000;
             pubnub.Presence<string>(channel, ThenPresenceWithCustomUUIDShouldReturnMessage, PresenceUUIDDummyMethodForConnectCallback, DummyErrorCallback);
             Thread.Sleep(1000);
             
@@ -120,13 +121,13 @@ namespace PubNubMessaging.Tests
             pubnub.SessionUUID = customUUID;
             pubnub.Subscribe<string>(channel, DummyMethodForSubscribeUUID, SubscribeUUIDDummyMethodForConnectCallback, DummyErrorCallback);
             Thread.Sleep(1000);
-            subscribeUUIDManualEvent.WaitOne(2000);
+            subscribeUUIDManualEvent.WaitOne(manualResetEventsWaitTimeout);
 
             pubnub.Unsubscribe<string>(channel, DummyMethodForUnSubscribeUUID, UnsubscribeUUIDDummyMethodForConnectCallback, UnsubscribeUUIDDummyMethodForDisconnectCallback, DummyErrorCallback);
             Thread.Sleep(1000);
-            unsubscribeUUIDManualEvent.WaitOne(2000);
+            unsubscribeUUIDManualEvent.WaitOne(manualResetEventsWaitTimeout);
 
-            presenceUUIDManualEvent.WaitOne(310 * 1000);
+            presenceUUIDManualEvent.WaitOne(manualResetEventsWaitTimeout);
 
             pubnub.EndPendingRequests();
 
@@ -197,6 +198,7 @@ namespace PubNubMessaging.Tests
         {
             try
             {
+                Console.WriteLine("ThenPresenceWithCustomUUIDShouldReturnMessage -> result = " + receivedMessage);
                 if (!string.IsNullOrEmpty(receivedMessage) && !string.IsNullOrEmpty(receivedMessage.Trim()))
                 {
                     object[] serializedMessage = JsonConvert.DeserializeObject<object[]>(receivedMessage);
