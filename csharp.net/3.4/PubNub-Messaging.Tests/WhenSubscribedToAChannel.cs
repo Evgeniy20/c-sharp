@@ -76,7 +76,7 @@ namespace PubNubMessaging.Tests
             string channel = "hello_my_channel";
 
             pubnub.Subscribe<string>(channel, ReceivedMessageCallbackWhenSubscribed, SubscribeDummyMethodForConnectCallback, DummyErrorCallback);
-
+            Thread.Sleep(1000);
             pubnub.Publish<string>(channel, "Test for WhenSubscribedToAChannel ThenItShouldReturnReceivedMessage", dummyPublishCallback, DummyErrorCallback);
             manualResetEventsWaitTimeout = (unitTest.EnableStubTest) ? 1000 : 310 * 1000;
             mePublish.WaitOne(manualResetEventsWaitTimeout);
@@ -182,7 +182,6 @@ namespace PubNubMessaging.Tests
             string channel = "hello_my_channel";
             
             manualResetEventsWaitTimeout = (unitTest.EnableStubTest) ? 1000 : 310 * 1000;
-            Thread.Sleep(1000);
             Console.WriteLine("ThenSubscriberShouldBeAbleToReceiveManyMessages..Iniatiating Subscribe");
             pubnub.Subscribe<string>(channel, SubscriberDummyMethodForManyMessagesUserCallback, SubscribeDummyMethodForManyMessagesConnectCallback, DummyErrorCallback);
             Thread.Sleep(1000);
@@ -195,7 +194,8 @@ namespace PubNubMessaging.Tests
                 {
                     Console.WriteLine("ThenSubscriberShouldBeAbleToReceiveManyMessages..Publishing " + index.ToString());
                     pubnub.Publish<string>(channel, index.ToString(), dummyPublishCallback, DummyErrorCallback);
-                    mePublish.WaitOne(manualResetEventsWaitTimeout);
+                    Console.WriteLine("ThenSubscriberShouldBeAbleToReceiveManyMessages..Publishing..waiting for confirmation " + index.ToString());
+                    //mePublish.WaitOne(10*1000);
                 }
             }
             meSubscriberManyMessages.WaitOne(manualResetEventsWaitTimeout);
@@ -344,12 +344,13 @@ namespace PubNubMessaging.Tests
 
         private void dummyPublishCallback(string result)
         {
+            Console.WriteLine("dummyPublishCallback -> result = " + result);
             mePublish.Set();
         }
 
         private void DummyErrorCallback(string result)
         {
-            
+            Console.WriteLine("DummyErrorCallback result = " + result);
         }
 
         private void dummyUnsubscribeCallback(string result)

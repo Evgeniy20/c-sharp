@@ -378,6 +378,30 @@ namespace PubNubMessaging.Tests
             return data;
         }
 
+        private Dictionary<string, string> LoadWhenGrantIsRequestedThenRevokeAtSubKeyLevelReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/grant/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"r\":0,\"ttl\":5,\"w\":0,\"level\":\"subkey\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/grant/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"subscribe_key\":\"demo\",\"r\":0,\"ttl\":5,\"w\":0,\"level\":\"subkey\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
+        private Dictionary<string, string> LoadWhenGrantIsRequestedThenRevokeAtChannelLevelReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/grant/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{},\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"level\":\"channel\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/grant/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"channels\":{},\"subscribe_key\":\"demo\",\"level\":\"channel\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
+        private Dictionary<string, string> LoadWhenGrantIsRequestedThenRevokeAtUserLevelReturnSuccess()
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("/v1/auth/grant/sub-key/sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"ttl\":5,\"auths\":{},\"subscribe_key\":\"sub-c-a478dd2a-c33d-11e2-883f-02ee2ddab7fe\",\"level\":\"user\",\"channel\":\"hello_my_authchannel\"},\"service\":\"Access Manager\"}");
+            data.Add("/v1/auth/grant/sub-key/demo", "{\"status\":200,\"message\":\"Success\",\"payload\":{\"ttl\":5,\"auths\":{},\"subscribe_key\":\"demo\",\"level\":\"user\",\"channel\":\"hello_my_authchannel\"},\"service\":\"Access Manager\"}");
+            return data;
+        }
+
         private Dictionary<string, string> LoadGrantRequestUnitTestInit()
         {
             Dictionary<string, string> data = new Dictionary<string, string>();
@@ -567,6 +591,15 @@ namespace PubNubMessaging.Tests
                             break;
                         case "ThenMultipleAuthGrantShouldReturnSuccess":
                             responseDictionary = LoadWhenGrantIsRequestedThenMultipleAuthGrantShouldReturnSuccess();
+                            break;
+                        case "ThenRevokeAtSubKeyLevelReturnSuccess":
+                            responseDictionary = LoadWhenGrantIsRequestedThenRevokeAtSubKeyLevelReturnSuccess();
+                            break;
+                        case "ThenRevokeAtChannelLevelReturnSuccess":
+                            responseDictionary = LoadWhenGrantIsRequestedThenRevokeAtChannelLevelReturnSuccess();
+                            break;
+                        case "ThenRevokeAtUserLevelReturnSuccess":
+                            responseDictionary = LoadWhenGrantIsRequestedThenRevokeAtUserLevelReturnSuccess();
                             break;
                         default:
                             break;

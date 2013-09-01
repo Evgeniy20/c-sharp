@@ -17,7 +17,9 @@ namespace PubNubMessaging.Tests
     {
 
         ManualResetEvent grantManualEvent = new ManualResetEvent(false);
+        ManualResetEvent revokeManualEvent = new ManualResetEvent(false);
         bool receivedGrantMessage = false;
+        bool receivedRevokeMessage = false;
         int multipleChannelGrantCount = 5;
         int multipleAuthGrantCount = 5;
         string currentUnitTestCase = "";
@@ -396,6 +398,147 @@ namespace PubNubMessaging.Tests
             }
         }
 
+        [Test]
+        public void ThenRevokeAtSubKeyLevelReturnSuccess()
+        {
+            currentUnitTestCase = "ThenRevokeAtSubKeyLevelReturnSuccess";
+
+            receivedGrantMessage = false;
+            receivedRevokeMessage = false;
+
+            Pubnub pubnub = new Pubnub(PubnubCommon.PublishKey, PubnubCommon.SubscribeKey, PubnubCommon.SecretKey, "", false);
+
+            PubnubUnitTest unitTest = new PubnubUnitTest();
+            unitTest.TestClassName = "WhenGrantIsRequested";
+            unitTest.TestCaseName = "ThenRevokeAtSubKeyLevelReturnSuccess";
+            pubnub.PubnubUnitTest = unitTest;
+            if (PubnubCommon.PAMEnabled)
+            {
+                if (!unitTest.EnableStubTest)
+                {
+                    pubnub.GrantAccess<string>("", true, true, 5, AccessToSubKeyLevelCallback, DummyErrorCallback);
+                    Thread.Sleep(1000);
+                    grantManualEvent.WaitOne();
+                }
+                else
+                {
+                    receivedGrantMessage = true;
+                }
+                if (receivedGrantMessage)
+                {
+                    Console.WriteLine("WhenGrantIsRequested -> ThenRevokeAtSubKeyLevelReturnSuccess -> Grant ok..Now trying Revoke");
+                    pubnub.GrantAccess<string>("", false, false, 5, RevokeToSubKeyLevelCallback, DummyErrorCallback);
+                    Thread.Sleep(1000);
+                    revokeManualEvent.WaitOne();
+                    Assert.IsTrue(receivedRevokeMessage, "WhenGrantIsRequested -> ThenRevokeAtSubKeyLevelReturnSuccess -> Grant success but revoke failed.");
+                }
+                else
+                {
+                    Assert.IsTrue(receivedGrantMessage, "WhenGrantIsRequested -> ThenRevokeAtSubKeyLevelReturnSuccess failed. -> Grant not occured, so is revoke");
+                }
+            }
+            else
+            {
+                Assert.Ignore("PAM Not Enabled for WhenGrantIsRequested -> ThenRevokeAtSubKeyLevelReturnSuccess.");
+            }
+        }
+
+        [Test]
+        public void ThenRevokeAtChannelLevelReturnSuccess()
+        {
+            currentUnitTestCase = "ThenRevokeAtChannelLevelReturnSuccess";
+
+            receivedGrantMessage = false;
+            receivedRevokeMessage = false;
+
+            Pubnub pubnub = new Pubnub(PubnubCommon.PublishKey, PubnubCommon.SubscribeKey, PubnubCommon.SecretKey, "", false);
+
+            PubnubUnitTest unitTest = new PubnubUnitTest();
+            unitTest.TestClassName = "WhenGrantIsRequested";
+            unitTest.TestCaseName = "ThenRevokeAtChannelLevelReturnSuccess";
+            pubnub.PubnubUnitTest = unitTest;
+
+            string channel = "hello_my_channel";
+            if (PubnubCommon.PAMEnabled)
+            {
+                if (!unitTest.EnableStubTest)
+                {
+                    pubnub.GrantAccess<string>(channel, true, true, 5, AccessToChannelLevelCallback, DummyErrorCallback);
+                    Thread.Sleep(1000);
+                    grantManualEvent.WaitOne();
+                }
+                else
+                {
+                    receivedGrantMessage = true;
+                }
+                if (receivedGrantMessage)
+                {
+                    Console.WriteLine("WhenGrantIsRequested -> ThenRevokeAtChannelLevelReturnSuccess -> Grant ok..Now trying Revoke");
+                    pubnub.GrantAccess<string>("", false, false, 5, RevokeToChannelLevelCallback, DummyErrorCallback);
+                    Thread.Sleep(1000);
+                    revokeManualEvent.WaitOne();
+                    Assert.IsTrue(receivedRevokeMessage, "WhenGrantIsRequested -> ThenRevokeAtChannelLevelReturnSuccess -> Grant success but revoke failed.");
+                }
+                else
+                {
+                    Assert.IsTrue(receivedGrantMessage, "WhenGrantIsRequested -> ThenRevokeAtChannelLevelReturnSuccess failed. -> Grant not occured, so is revoke");
+                }
+            }
+            else
+            {
+                Assert.Ignore("PAM Not Enabled for WhenGrantIsRequested -> ThenRevokeAtChannelLevelReturnSuccess.");
+            }
+        }
+
+        [Test]
+        public void ThenRevokeAtUserLevelReturnSuccess()
+        {
+            currentUnitTestCase = "ThenRevokeAtUserLevelReturnSuccess";
+
+            receivedGrantMessage = false;
+            receivedRevokeMessage = false;
+
+            Pubnub pubnub = new Pubnub(PubnubCommon.PublishKey, PubnubCommon.SubscribeKey, PubnubCommon.SecretKey, "", false);
+
+            PubnubUnitTest unitTest = new PubnubUnitTest();
+            unitTest.TestClassName = "WhenGrantIsRequested";
+            unitTest.TestCaseName = "ThenRevokeAtUserLevelReturnSuccess";
+            pubnub.PubnubUnitTest = unitTest;
+
+            string channel = "hello_my_authchannel";
+            string authKey = "hello_my_authkey";
+            if (PubnubCommon.PAMEnabled)
+            {
+                if (!unitTest.EnableStubTest)
+                {
+                    pubnub.AuthenticationKey = authKey;
+                    pubnub.GrantAccess<string>(channel, true, true, 5, AccessToUserLevelCallback, DummyErrorCallback);
+                    Thread.Sleep(1000);
+                    grantManualEvent.WaitOne();
+                }
+                else
+                {
+                    receivedGrantMessage = true;
+                }
+                if (receivedGrantMessage)
+                {
+                    Console.WriteLine("WhenGrantIsRequested -> ThenRevokeAtUserLevelReturnSuccess -> Grant ok..Now trying Revoke");
+                    pubnub.GrantAccess<string>("", false, false, 5, RevokeToUserLevelCallback, DummyErrorCallback);
+                    Thread.Sleep(1000);
+                    revokeManualEvent.WaitOne();
+                    Assert.IsTrue(receivedRevokeMessage, "WhenGrantIsRequested -> ThenRevokeAtUserLevelReturnSuccess -> Grant success but revoke failed.");
+                }
+                else
+                {
+                    Assert.IsTrue(receivedGrantMessage, "WhenGrantIsRequested -> ThenRevokeAtUserLevelReturnSuccess failed. -> Grant not occured, so is revoke");
+                }
+            }
+            else
+            {
+                Assert.Ignore("PAM Not Enabled for WhenGrantIsRequested -> ThenRevokeAtUserLevelReturnSuccess.");
+            }
+        }
+
         void AccessToSubKeyLevelCallback(string receivedMessage)
         {
             try
@@ -421,6 +564,7 @@ namespace PubNubMessaging.Tests
                                     switch (currentUnitTestCase)
                                     {
                                         case "ThenSubKeyLevelWithReadWriteShouldReturnSuccess":
+                                        case "ThenRevokeAtSubKeyLevelReturnSuccess":
                                             if (read && write) receivedGrantMessage = true;
                                             break;
                                         case "ThenSubKeyLevelWithReadShouldReturnSuccess":
@@ -435,14 +579,7 @@ namespace PubNubMessaging.Tests
                                 }
                             }
                         }
-
-                        //if (dictionary.
-                        //if (status == "200")
-                        //{
-                        //    receivedGrantMessage = true;
-                        //}
                     }
-                    //var level = dictionary["level"].ToString();
                 }
             }
             catch { }
@@ -484,6 +621,7 @@ namespace PubNubMessaging.Tests
                                             switch (currentUnitTestCase)
                                             {
                                                 case "ThenChannelLevelWithReadWriteShouldReturnSuccess":
+                                                case "ThenRevokeAtChannelLevelReturnSuccess":
                                                     if (read && write) receivedGrantMessage = true;
                                                     break;
                                                 case "ThenChannelLevelWithReadShouldReturnSuccess":
@@ -551,6 +689,7 @@ namespace PubNubMessaging.Tests
                                                         switch (currentUnitTestCase)
                                                         {
                                                             case "ThenUserLevelWithReadWriteShouldReturnSuccess":
+                                                            case "ThenRevokeAtUserLevelReturnSuccess":
                                                                 if (read && write) receivedGrantMessage = true;
                                                                 break;
                                                             case "ThenUserLevelWithReadShouldReturnSuccess":
@@ -662,6 +801,165 @@ namespace PubNubMessaging.Tests
             }
         }
 
+        void RevokeToSubKeyLevelCallback(string receivedMessage)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(receivedMessage) && !string.IsNullOrEmpty(receivedMessage.Trim()))
+                {
+                    object[] serializedMessage = JsonConvert.DeserializeObject<object[]>(receivedMessage);
+                    JContainer dictionary = serializedMessage[0] as JContainer;
+                    if (dictionary != null)
+                    {
+                        int statusCode = dictionary.Value<int>("status");
+                        string statusMessage = dictionary.Value<string>("message");
+                        if (statusCode == 200 && statusMessage.ToLower() == "success")
+                        {
+                            var payload = dictionary.Value<JContainer>("payload");
+                            if (payload != null)
+                            {
+                                bool read = payload.Value<bool>("r");
+                                bool write = payload.Value<bool>("w");
+                                string level = payload.Value<string>("level");
+                                if (level == "subkey")
+                                {
+                                    switch (currentUnitTestCase)
+                                    {
+                                        case "ThenRevokeAtSubKeyLevelReturnSuccess":
+                                            if (!read && !write) receivedRevokeMessage = true;
+                                            break;
+                                        case "ThenSubKeyLevelWithReadShouldReturnSuccess":
+                                            //if (read && !write) receivedGrantMessage = true;
+                                            break;
+                                        case "ThenSubKeyLevelWithWriteShouldReturnSuccess":
+                                            //if (!read && write) receivedGrantMessage = true;
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+
+                        //if (dictionary.
+                        //if (status == "200")
+                        //{
+                        //    receivedGrantMessage = true;
+                        //}
+                    }
+                    //var level = dictionary["level"].ToString();
+                }
+            }
+            catch { }
+            finally
+            {
+                revokeManualEvent.Set();
+            }
+        }
+
+        void RevokeToChannelLevelCallback(string receivedMessage)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(receivedMessage) && !string.IsNullOrEmpty(receivedMessage.Trim()))
+                {
+                    object[] serializedMessage = JsonConvert.DeserializeObject<object[]>(receivedMessage);
+                    JContainer dictionary = serializedMessage[0] as JContainer;
+                    string currentChannel = serializedMessage[1].ToString();
+                    if (dictionary != null)
+                    {
+                        int statusCode = dictionary.Value<int>("status");
+                        string statusMessage = dictionary.Value<string>("message");
+                        if (statusCode == 200 && statusMessage.ToLower() == "success")
+                        {
+                            var payload = dictionary.Value<JContainer>("payload");
+                            if (payload != null)
+                            {
+                                string level = payload.Value<string>("level");
+                                var channels = payload.Value<JContainer>("channels");
+                                if (channels != null)
+                                {
+                                    var channelContainer = channels.Value<JContainer>(currentChannel);
+                                    if (channelContainer == null)
+                                    {
+                                        receivedRevokeMessage = true;
+                                    }
+                                }
+                                else
+                                {
+                                    receivedRevokeMessage = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            finally
+            {
+                revokeManualEvent.Set();
+            }
+        }
+
+        void RevokeToUserLevelCallback(string receivedMessage)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(receivedMessage) && !string.IsNullOrEmpty(receivedMessage.Trim()))
+                {
+                    object[] serializedMessage = JsonConvert.DeserializeObject<object[]>(receivedMessage);
+                    JContainer dictionary = serializedMessage[0] as JContainer;
+                    string currentChannel = serializedMessage[1].ToString();
+                    if (dictionary != null)
+                    {
+                        int statusCode = dictionary.Value<int>("status");
+                        string statusMessage = dictionary.Value<string>("message");
+                        if (statusCode == 200 && statusMessage.ToLower() == "success")
+                        {
+                            var payload = dictionary.Value<JContainer>("payload");
+                            if (payload != null)
+                            {
+                                string level = payload.Value<string>("level");
+                                string channel = payload.Value<string>("channel");
+                                var auths = payload.Value<JContainer>("auths");
+                                if (auths != null && auths.Count > 0)
+                                {
+                                    receivedRevokeMessage = true;
+                                    foreach (JToken auth in auths.Children())
+                                    {
+                                        if (auth is JProperty)
+                                        {
+                                            var authProperty = auth as JProperty;
+                                            if (authProperty != null)
+                                            {
+                                                string authKey = authProperty.Name;
+                                                var authKeyContainer = auths.Value<JContainer>(authKey);
+                                                if (authKeyContainer != null)
+                                                {
+                                                    receivedRevokeMessage = false;
+                                                    break;
+                                                }
+
+                                            }
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    receivedRevokeMessage = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            finally
+            {
+                revokeManualEvent.Set();
+            }
+        }
+        
         private void DummyErrorCallback(string result)
         {
 

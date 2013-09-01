@@ -121,6 +121,7 @@ namespace PubNubMessaging.Tests
             }
             else
             {
+                Thread.Sleep(1000);
                 pubnub.DetailedHistory<string>(channel, -1, unEncryptPublishTimetoken, -1, false, CaptureUnencryptDetailedHistoryCallback, DummyErrorCallback);
                 mreUnencryptDetailedHistory.WaitOne(manualResetEventsWaitTimeout);
                 Assert.IsTrue(isUnencryptDetailedHistory, "Unable to match the successful unencrypt Publish");
@@ -150,6 +151,7 @@ namespace PubNubMessaging.Tests
             }
             else
             {
+                Thread.Sleep(1000);
                 pubnub.DetailedHistory<string>(channel, -1, unEncryptObjectPublishTimetoken, -1, false, CaptureUnencryptObjectDetailedHistoryCallback, DummyErrorCallback);
                 mreUnencryptObjectDetailedHistory.WaitOne(manualResetEventsWaitTimeout);
                 Assert.IsTrue(isUnencryptObjectDetailedHistory, "Unable to match the successful unencrypt object Publish");
@@ -182,6 +184,7 @@ namespace PubNubMessaging.Tests
             }
             else
             {
+                Thread.Sleep(1000);
                 pubnub.DetailedHistory<string>(channel, -1, encryptObjectPublishTimetoken, -1, false, CaptureEncryptObjectDetailedHistoryCallback, DummyErrorCallback);
                 mreEncryptObjectDetailedHistory.WaitOne(manualResetEventsWaitTimeout);
                 Assert.IsTrue(isEncryptObjectDetailedHistory, "Unable to match the successful encrypt object Publish");
@@ -213,6 +216,7 @@ namespace PubNubMessaging.Tests
             }
             else
             {
+                Thread.Sleep(1000);
                 pubnub.DetailedHistory<string>(channel, -1, encryptPublishTimetoken, -1, false, CaptureEncryptDetailedHistoryCallback, DummyErrorCallback);
                 mreEncryptDetailedHistory.WaitOne(manualResetEventsWaitTimeout);
                 Assert.IsTrue(isEncryptDetailedHistory, "Unable to decrypt the successful Publish");
@@ -244,6 +248,7 @@ namespace PubNubMessaging.Tests
             }
             else
             {
+                Thread.Sleep(1000);
                 pubnub.DetailedHistory<string>(channel, -1, secretEncryptPublishTimetoken, -1, false, CaptureSecretEncryptDetailedHistoryCallback, DummyErrorCallback);
                 mreSecretEncryptDetailedHistory.WaitOne(manualResetEventsWaitTimeout);
                 Assert.IsTrue(isSecretEncryptDetailedHistory, "Unable to decrypt the successful Secret key Publish");
