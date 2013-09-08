@@ -3578,11 +3578,11 @@ namespace PubNubMessaging.Core
 		{
 			if (ignoreComma)
 			{
-				return " ~`!@#$%^&*()+=[]\\{}|;':\"./<>?".IndexOf(ch) >= 0;
+				return " ~`!@#$%^&*()+=[]\\{}|;':\"/<>?".IndexOf(ch) >= 0;
 			}
 			else
 			{
-				return " ~`!@#$%^&*()+=[]\\{}|;':\",./<>?".IndexOf(ch) >= 0;
+				return " ~`!@#$%^&*()+=[]\\{}|;':\",/<>?".IndexOf(ch) >= 0;
 			}
 		}
 		
