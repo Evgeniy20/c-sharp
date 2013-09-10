@@ -3558,7 +3558,11 @@ namespace PubNubMessaging.Core
 					o.Append(ToHex(ch / 16));
 					o.Append(ToHex(ch % 16));
 				}
-				else o.Append(ch);
+                else
+                {
+                    string escapeChar = System.Uri.EscapeDataString(ch.ToString());
+                    o.Append(escapeChar);
+                }
 			}
 			encodedUri = o.ToString();
 			if (type == ResponseType.Here_Now || type == ResponseType.DetailedHistory || type == ResponseType.Leave)
