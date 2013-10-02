@@ -1,6 +1,9 @@
-﻿//Build Date: August 07, 2013
-#if (UNITY_STANDALONE || UNITY_WEBPLAYER || UNITY_IOS || UNITY_ANDROID)
+﻿//Build Date: Oct 02, 2013
+#if (UNITY_WEBPLAYER || UNITY_ANDROID || UNITY_STANDALONE)
 #define USE_JSONFX
+#endif
+#if (UNITY_IOS)
+#define USE_MiniJSON 
 #endif
 #if (__MonoCS__ && !UNITY_STANDALONE && !UNITY_WEBPLAYER)
 #define TRACE
@@ -52,6 +55,10 @@ using JsonFx.Json;
 #elif (USE_DOTNET_SERIALIZATION)
 using System.Runtime.Serialization.Json;
 using System.Web.Script.Serialization;
+#elif (USE_LITJSON)
+using LitJson;
+#elif (USE_MiniJSON)
+using MiniJSON;
 #else
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -71,7 +78,7 @@ namespace PubNubMessaging.Core
 		bool overrideTcpKeepAlive = true;
 		bool _enableJsonEncodingForPublish = true;
 		const LoggingMethod.Level pubnubLogLevel = LoggingMethod.Level.Error;
-		
+
 #if (!SILVERLIGHT && !WINDOWS_PHONE)
 		bool pubnubEnableProxyConfig = true;
 #endif
@@ -293,10 +300,14 @@ namespace PubNubMessaging.Core
 			this.JsonPluggableLibrary = new JsonFXDotNet();
 #elif (USE_DOTNET_SERIALIZATION)
 			this.JsonPluggableLibrary = new JscriptSerializer();    
+#elif (USE_MiniJSON)
+			this.JsonPluggableLibrary = new MiniJSONObjectSerializer();  
+#elif (USE_LITJSON)
+			this.JsonPluggableLibrary = new LitJsonSerializer();  
 #else
 			this.JsonPluggableLibrary = new NewtonsoftJsonDotNet();
 #endif
-			
+
 #if(MONOTOUCH || MONODROID || SILVERLIGHT || WINDOWS_PHONE || UNITY_STANDALONE || UNITY_WEBPLAYER || UNITY_IOS || UNITY_ANDROID)
 			LoggingMethod.LogLevel = pubnubLogLevel;
 #else
@@ -2927,13 +2938,27 @@ namespace PubNubMessaging.Core
 				                select item as object).ToArray();
 				if (messages != null && messages.Length > 0)
 				{
+					int i=0;
 					object[] messageList = messages[0] as object[];
+#if (USE_MiniJSON)
+					foreach (object o in result){
+						if(i==0)
+						{
+							IList collection = (IList)o;
+							messageList = new object[collection.Count];
+							collection.CopyTo(messageList, 0);
+						}
+						i++;
+					}
+#endif
 					messageChannels = messages[2].ToString().Split(',');
-					
+
 					if (messageList != null && messageList.Length > 0)
 					{
+
 						for (int messageIndex = 0; messageIndex < messageList.Length; messageIndex++)
 						{
+
 							string currentChannel = (messageChannels.Length == 1) ? (string)messageChannels[0] : (string)messageChannels[messageIndex];
 							List<object> itemMessage = new List<object>();
 							if (currentChannel.Contains("-pnpres"))
@@ -2956,6 +2981,7 @@ namespace PubNubMessaging.Core
 									itemMessage.Add(messageList[messageIndex]);
 								}
 							}
+
 							itemMessage.Add(messages[1].ToString());
                             itemMessage.Add(currentChannel.Replace("-pnpres", ""));
                             if (_channelCallbacks.Count > 0 && _channelCallbacks.ContainsKey(currentChannel))
@@ -5006,7 +5032,7 @@ namespace PubNubMessaging.Core
 		List<object> DeserializeToListOfObject(string jsonString);
 		
 		object DeserializeToObject(string jsonString);
-		
+
 		Dictionary<string, object> DeserializeToDictionaryOfObject(string jsonString);
 	}
 	
@@ -5066,6 +5092,52 @@ namespace PubNubMessaging.Core
 		{
 			JavaScriptSerializer jS = new JavaScriptSerializer();
 			return (Dictionary<string, object>)jS.Deserialize<Dictionary<string, object>>(jsonString);
+		}
+	}
+#elif (USE_MiniJSON)
+	public class MiniJSONObjectSerializer : IJsonPluggableLibrary
+	{
+		public string SerializeToJsonString(object objectToSerialize)
+		{
+			return Json.Serialize(objectToSerialize);
+		}
+
+		public List<object> DeserializeToListOfObject(string jsonString)
+		{
+			return Json.Deserialize(jsonString) as List<object>;
+		}
+
+		public object DeserializeToObject (string jsonString)
+		{
+			return Json.Deserialize (jsonString) as object;
+		}
+
+		public Dictionary<string, object> DeserializeToDictionaryOfObject(string jsonString)
+		{
+			return Json.Deserialize(jsonString) as Dictionary<string, object>;
+		}
+	}
+#elif (USE_LITJSON)
+	public class LitJsonSerializer : IJsonPluggableLibrary
+	{
+		public string SerializeToJsonString(object objectToSerialize)
+		{
+			return JsonMapper.ToJson(objectToSerialize);
+		}
+
+		public List<object> DeserializeToListOfObject(string jsonString)
+		{
+			return (List<object>)JsonMapper.ToObject<List<object>>(jsonString);
+		}
+
+		public object DeserializeToObject(string jsonString)
+		{
+			return (object)JsonMapper.ToObject<object>(jsonString);
+		}
+
+		public Dictionary<string, object> DeserializeToDictionaryOfObject(string jsonString)
+		{
+			return (Dictionary<string, object>)JsonMapper.ToObject<Dictionary<string, object>>(jsonString);
 		}
 	}
 #else
