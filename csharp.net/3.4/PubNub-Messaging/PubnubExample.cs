@@ -258,6 +258,8 @@ namespace PubNubMessaging.Core
             Console.WriteLine("ENTER 9 FOR Disconnect/Reconnect existing Subscriber(s) (when internet is available)");
             Console.WriteLine("ENTER 10 TO Disable Network Connection (no internet)");
             Console.WriteLine("ENTER 11 TO Enable Network Connection (yes internet)");
+            Console.WriteLine("ENTER 12 TO Simulate Machine Sleep Mode");
+            Console.WriteLine("ENTER 13 TO Simulate Machine Awake Mode");
             Console.WriteLine("ENTER 99 FOR EXIT OR QUIT");
 
             bool exitFlag = false;
@@ -435,6 +437,17 @@ namespace PubNubMessaging.Core
                         Console.WriteLine("Stopping Simulation of Internet non-availability");
                         Console.ResetColor();
                         pubnub.DisableSimulateNetworkFailForTestingOnly();
+                        break;
+                    case "12":
+                        Console.WriteLine("Enabling simulation of Sleep/Suspend Mode");
+                        pubnub.EnableMachineSleepModeForTestingOnly();
+                        break;
+                    case "13":
+                        Console.WriteLine("Disabling simulation of Sleep/Suspend Mode");
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("simulation going to awake mode");
+                        Console.ResetColor();
+                        pubnub.DisableMachineSleepModeForTestingOnly();
                         break;
                     default:
                         Console.WriteLine("INVALID CHOICE. ENTER 99 FOR EXIT OR QUIT");
