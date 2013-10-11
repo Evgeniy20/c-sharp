@@ -2,9 +2,9 @@
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
   <MonoDevelop.Ide.Workbench ActiveDocument="PubNub-Console/Pubnub.cs">
     <Files>
-      <File FileName="PubNub-Console/Pubnub.cs" Line="4403" Column="66" />
-      <File FileName="PubNubTest/PubnubUnitTest.cs" Line="8" Column="1" />
-      <File FileName="PubNubTest/WhenAClientIsPresented.cs" Line="174" Column="23" />
+      <File FileName="PubNub-Console/Pubnub.cs" Line="1453" Column="10" />
+      <File FileName="PubNubTest/PubnubUnitTest.cs" Line="1" Column="14" />
+      <File FileName="PubNubTest/Common.cs" Line="3" Column="2" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
@@ -42,9 +42,7 @@
           <Node name="PubNub-Messaging.Tests" expanded="True">
             <Node name="PubNubMessaging" expanded="True">
               <Node name="Tests" expanded="True">
-                <Node name="WhenAClientIsPresented" expanded="True">
-                  <Node name="ThenPresenceShouldReturnCustomUUID" selected="True" />
-                </Node>
+                <Node name="WhenAClientIsPresented" selected="True" />
                 <Node name="WhenSubscribedToAChannel" expanded="True" />
               </Node>
             </Node>
@@ -59,5 +57,7 @@
   <MonoDevelop.Ide.DebuggingService.PinnedWatches>
     <Watch file="PubNub-Messaging/Pubnub.cs" line="549" offsetX="648" offsetY="6960" expression="result" liveUpdate="False" />
     <Watch file="PubNub-Console/Pubnub.cs" line="2838" offsetX="591" offsetY="45392" expression="netInterface" liveUpdate="False" />
+  </MonoDevelop.Ide.DebuggingService.PinnedWatches>
+</Properties>etY="45392" expression="netInterface" liveUpdate="False" />
   </MonoDevelop.Ide.DebuggingService.PinnedWatches>
 </Properties>
