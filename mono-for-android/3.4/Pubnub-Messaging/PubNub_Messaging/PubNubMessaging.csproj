@@ -22,7 +22,7 @@
     <DebugType>full</DebugType>
     <Optimize>False</Optimize>
     <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;MONODROID</DefineConstants>
+    <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>False</ConsolePause>
@@ -38,7 +38,6 @@
     <ConsolePause>False</ConsolePause>
     <AndroidUseSharedRuntime>False</AndroidUseSharedRuntime>
     <AndroidLinkMode>SdkOnly</AndroidLinkMode>
-    <DefineConstants>MONODROID</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
