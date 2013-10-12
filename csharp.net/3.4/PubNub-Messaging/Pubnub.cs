@@ -1,4 +1,4 @@
-﻿//Build Date: October 08, 2013
+﻿//Build Date: October 12, 2013
 #if (UNITY_STANDALONE || UNITY_WEBPLAYER || UNITY_IOS || UNITY_ANDROID)
 #define USE_JSONFX
 #endif
@@ -4629,7 +4629,11 @@ namespace PubNubMessaging.Core
 #elif (UNITY_STANDALONE || UNITY_WEBPLAYER)
 				print(logText);
 #else
-				Trace.WriteLine(logText);
+                try
+                {
+                    Trace.WriteLine(logText);
+                }
+                catch { }
 #endif
 			}
 		}
