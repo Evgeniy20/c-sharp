@@ -1,4 +1,4 @@
-﻿//Build Date: Oct 07, 2013
+﻿//Build Date: Oct 17, 2013
 #if (UNITY_STANDALONE || UNITY_WEBPLAYER || UNITY_ANDROID)
 #define USE_JSONFX
 #elif (UNITY_IOS)
@@ -11,6 +11,8 @@
 #if (UNITY_STANDALONE || UNITY_WEBPLAYER || UNITY_IOS || UNITY_ANDROID)
 using UnityEngine;
 using System.Security.Cryptography.X509Certificates;
+#else
+using System.Net.Sockets;
 #endif
 using System;
 using System.IO;
@@ -28,7 +30,7 @@ using System.Globalization;
 #if !UNITY_WEBPLAYER
 using System.Net.NetworkInformation;
 #endif
-using System.Net.Sockets;
+
 using System.Configuration;
 using Microsoft.Win32;
 using System.Linq;
@@ -46,7 +48,7 @@ using System.Net.Security;
 using Android.Runtime;
 using Javax.Net.Ssl;
 #endif
-#if(MONODROID || __ANDROID__ || UNITY_ANDROID)
+#if(MONODROID || __ANDROID__ )
 using System.Security.Cryptography.X509Certificates;
 #endif
 
@@ -1712,22 +1714,23 @@ namespace PubNubMessaging.Core
                 }
                 LoggingMethod.WriteToLog(string.Format("DateTime {0}, Request={1}", DateTime.Now.ToString(), requestUri.ToString()), LoggingMethod.LevelInfo);
 
-
-                #if(UNITY_IOS)
-                if((pubnubRequestState.Type == ResponseType.Publish) && (RequestIsUnsafe(requestUri)))
-                {
-                    SendRequestUsingTcpClient<T>(requestUri, pubnubRequestState);
-                } else {
-                    try{
-                        IAsyncResult asyncResult = request.BeginGetResponse(new AsyncCallback(UrlProcessResponseCallback<T>), pubnubRequestState);
-                        if (!asyncResult.AsyncWaitHandle.WaitOne(GetTimeoutInSecondsForResponseType(pubnubRequestState.Type) * 1000))
-                        {
-                            OnPubnubWebRequestTimeout<T>(pubnubRequestState, true);
-                        }
-                    } catch (Exception ex){
-                        LoggingMethod.WriteToLog ("Exception in unity ios " + ex.ToString(), LoggingMethod.LevelError);
-                    }
-                } 
+				#if (UNITY_ANDROID || UNITY_IOS)
+				if((pubnubRequestState.Type == ResponseType.Publish) && (RequestIsUnsafe(requestUri)))
+				{
+					SendRequestUsingUnityWww<T>(requestUri, pubnubRequestState);
+				}
+				else
+				{
+					try{
+						IAsyncResult asyncResult = request.BeginGetResponse(new AsyncCallback(UrlProcessResponseCallback<T>), pubnubRequestState);
+						if (!asyncResult.AsyncWaitHandle.WaitOne(GetTimeoutInSecondsForResponseType(pubnubRequestState.Type) * 1000))
+						{
+							OnPubnubWebRequestTimeout<T>(pubnubRequestState, true);
+						}
+					} catch (Exception ex){
+						LoggingMethod.WriteToLog ("Exception in unity ios/android " + ex.ToString(), LoggingMethod.LevelError);
+					}
+				}
                 #elif(__MonoCS__)
                 if((pubnubRequestState.Type == ResponseType.Publish) && (RequestIsUnsafe(requestUri)))
                 {
@@ -1769,29 +1772,128 @@ namespace PubNubMessaging.Core
             }
         }
 
-        #if (__MonoCS__)
-        bool RequestIsUnsafe(Uri requestUri)
-        {
-            bool isUnsafe = false;
-            StringBuilder requestMessage = new StringBuilder();
-            if (requestUri.Segments.Length > 7)
-            {
-                for (int i = 7; i < requestUri.Segments.Length; i++)
-                {
-                    requestMessage.Append(requestUri.Segments[i]);
-                }
-            }
-            foreach (char ch in requestMessage.ToString().ToCharArray())
-            {
-                if (" ~`!@#$^&*()+=[]\\{}|;':\"./<>?".IndexOf(ch) >= 0)
-                {
-                    isUnsafe = true;
-                    break;
-                }
-            }
-            return isUnsafe;
-        }
+		
+		#if(UNITY_ANDROID)      
+		/// <summary>
+		/// Workaround for the bug described here 
+		/// https://bugzilla.xamarin.com/show_bug.cgi?id=6501
+		/// </summary>
+		/// <param name="sender">Sender.</param>
+		/// <param name="certificate">Certificate.</param>
+		/// <param name="chain">Chain.</param>
+		/// <param name="sslPolicyErrors">Ssl policy errors.</param>
+		static bool ValidatorUnity (object sender,
+		                            System.Security.Cryptography.X509Certificates.X509Certificate
+		                            certificate,
+		                            System.Security.Cryptography.X509Certificates.X509Chain chain,
+		                            System.Net.Security.SslPolicyErrors sslPolicyErrors)
+		{
+			//TODO:
+			return true;
+		}
+		#endif
 
+		#if(MONODROID || __ANDROID__)      
+		/// <summary>
+		/// Workaround for the bug described here 
+		/// https://bugzilla.xamarin.com/show_bug.cgi?id=6501
+		/// </summary>
+		/// <param name="sender">Sender.</param>
+		/// <param name="certificate">Certificate.</param>
+		/// <param name="chain">Chain.</param>
+		/// <param name="sslPolicyErrors">Ssl policy errors.</param>
+		static bool Validator (object sender,
+		                       System.Security.Cryptography.X509Certificates.X509Certificate
+		                       certificate,
+		                       System.Security.Cryptography.X509Certificates.X509Chain chain,
+		                       System.Net.Security.SslPolicyErrors sslPolicyErrors)
+		{
+			var sslTrustManager = (IX509TrustManager) typeof (AndroidEnvironment)
+				.GetField ("sslTrustManager",
+				           System.Reflection.BindingFlags.NonPublic |
+				           System.Reflection.BindingFlags.Static)
+					.GetValue (null);
+
+			Func<Java.Security.Cert.CertificateFactory,
+			System.Security.Cryptography.X509Certificates.X509Certificate,
+			Java.Security.Cert.X509Certificate> c = (f, v) =>
+				f.GenerateCertificate (
+					new System.IO.MemoryStream (v.GetRawCertData ()))
+					.JavaCast<Java.Security.Cert.X509Certificate>();
+			var cFactory = Java.Security.Cert.CertificateFactory.GetInstance (Javax.Net.Ssl.TrustManagerFactory.DefaultAlgorithm);
+			var certs = new List<Java.Security.Cert.X509Certificate>(
+				chain.ChainElements.Count + 1);
+			certs.Add (c (cFactory, certificate));
+			foreach (var ce in chain.ChainElements) {
+				if (certificate.Equals (ce.Certificate))
+					continue;
+				certificate = ce.Certificate;
+				certs.Add (c (cFactory, certificate));
+			}
+			try {
+				//had to comment this out as sslTrustManager was returning null
+				//working on the fix or a workaround
+				//sslTrustManager.CheckServerTrusted (certs.ToArray (),
+				//                                  Javax.Net.Ssl.TrustManagerFactory.DefaultAlgorithm);
+				return true;
+			}
+			catch (Exception e) {
+				throw new Exception("SSL error");
+			}
+		}
+		#endif
+
+		#if (UNITY_ANDROID || UNITY_IOS)
+		void CoroutineCompleteHandler<T> (object sender, EventArgs ea){
+			CustomEventArgs<T> cea = ea as CustomEventArgs<T>;
+			if (cea.isTimeout) {
+				OnPubnubWebRequestTimeout<T>(cea.pubnubRequestState, true);
+				UrlRequestCommonExceptionHandler<T>(cea.pubnubRequestState.Type, cea.pubnubRequestState.Channels, true, cea.pubnubRequestState.UserCallback, cea.pubnubRequestState.ConnectCallback, cea.pubnubRequestState.ErrorCallback, false);
+			}else if (cea.isError) {
+				UrlRequestCommonExceptionHandler<T>(cea.pubnubRequestState.Type, cea.pubnubRequestState.Channels, false, cea.pubnubRequestState.UserCallback, cea.pubnubRequestState.ConnectCallback, cea.pubnubRequestState.ErrorCallback, false);
+			} else {
+				var result = WrapResultBasedOnResponseType (cea.pubnubRequestState.Type, cea.message, cea.pubnubRequestState.Channels, cea.pubnubRequestState.Reconnect, cea.pubnubRequestState.Timetoken, cea.pubnubRequestState.ErrorCallback);
+				ProcessResponseCallbacks<T> (result, cea.pubnubRequestState);
+			}
+			CoroutineClass coroutine = sender as CoroutineClass;
+			coroutine.CoroutineComplete -= CoroutineCompleteHandler<T>;
+		}
+
+		private void SendRequestUsingUnityWww<T>(Uri requestUri, RequestState<T> pubnubRequestState)
+		{
+			GameObject gobj = new GameObject ();
+			CoroutineClass coroutine = gobj.AddComponent<CoroutineClass>();
+			int timeout = GetTimeoutInSecondsForResponseType (pubnubRequestState.Type) * 1000;
+			coroutine.Start<T>(requestUri.OriginalString, pubnubRequestState, timeout);
+			coroutine.CoroutineComplete += CoroutineCompleteHandler<T>;
+		}
+		#endif
+
+		#if (__MonoCS__)
+		bool RequestIsUnsafe(Uri requestUri)
+		{
+			bool isUnsafe = false;
+			StringBuilder requestMessage = new StringBuilder();
+			if (requestUri.Segments.Length > 7)
+			{
+				for (int i = 7; i < requestUri.Segments.Length; i++)
+				{
+					requestMessage.Append(requestUri.Segments[i]);
+				}
+			}
+			foreach (char ch in requestMessage.ToString().ToCharArray())
+			{
+				if (" ~`!@#$^&*()+=[]\\{}|;':\"./<>?".IndexOf(ch) >= 0)
+				{
+					isUnsafe = true;
+					break;
+				}
+			}
+			return isUnsafe;
+		}
+		#endif
+
+        #if (__MonoCS__ && !UNITY_ANDROID && !UNITY_IOS)
         string CreateRequest(Uri requestUri)
         {
             StringBuilder requestBuilder = new StringBuilder();
@@ -1886,76 +1988,6 @@ namespace PubNubMessaging.Core
                 throw new WebException("Couldn't connect to the server");
             }
         }
-
-        #if(MONODROID || __ANDROID__)      
-        /// <summary>
-        /// Workaround for the bug described here 
-        /// https://bugzilla.xamarin.com/show_bug.cgi?id=6501
-        /// </summary>
-        /// <param name="sender">Sender.</param>
-        /// <param name="certificate">Certificate.</param>
-        /// <param name="chain">Chain.</param>
-        /// <param name="sslPolicyErrors">Ssl policy errors.</param>
-        static bool Validator (object sender,
-                               System.Security.Cryptography.X509Certificates.X509Certificate
-                               certificate,
-                               System.Security.Cryptography.X509Certificates.X509Chain chain,
-                               System.Net.Security.SslPolicyErrors sslPolicyErrors)
-        {
-            var sslTrustManager = (IX509TrustManager) typeof (AndroidEnvironment)
-                .GetField ("sslTrustManager",
-                           System.Reflection.BindingFlags.NonPublic |
-                           System.Reflection.BindingFlags.Static)
-                    .GetValue (null);
-
-            Func<Java.Security.Cert.CertificateFactory,
-            System.Security.Cryptography.X509Certificates.X509Certificate,
-            Java.Security.Cert.X509Certificate> c = (f, v) =>
-                f.GenerateCertificate (
-                    new System.IO.MemoryStream (v.GetRawCertData ()))
-                    .JavaCast<Java.Security.Cert.X509Certificate>();
-            var cFactory = Java.Security.Cert.CertificateFactory.GetInstance (Javax.Net.Ssl.TrustManagerFactory.DefaultAlgorithm);
-            var certs = new List<Java.Security.Cert.X509Certificate>(
-                chain.ChainElements.Count + 1);
-            certs.Add (c (cFactory, certificate));
-            foreach (var ce in chain.ChainElements) {
-                if (certificate.Equals (ce.Certificate))
-                    continue;
-                certificate = ce.Certificate;
-                certs.Add (c (cFactory, certificate));
-            }
-            try {
-                //had to comment this out as sslTrustManager was returning null
-                //working on the fix or a workaround
-                //sslTrustManager.CheckServerTrusted (certs.ToArray (),
-                //                                  Javax.Net.Ssl.TrustManagerFactory.DefaultAlgorithm);
-                return true;
-            }
-            catch (Exception e) {
-                throw new Exception("SSL error");
-            }
-        }
-        #endif
-
-        #if(UNITY_ANDROID)      
-        /// <summary>
-        /// Workaround for the bug described here 
-        /// https://bugzilla.xamarin.com/show_bug.cgi?id=6501
-        /// </summary>
-        /// <param name="sender">Sender.</param>
-        /// <param name="certificate">Certificate.</param>
-        /// <param name="chain">Chain.</param>
-        /// <param name="sslPolicyErrors">Ssl policy errors.</param>
-        static bool ValidatorUnity (object sender,
-                                    System.Security.Cryptography.X509Certificates.X509Certificate
-                                    certificate,
-                                    System.Security.Cryptography.X509Certificates.X509Chain chain,
-                                    System.Net.Security.SslPolicyErrors sslPolicyErrors)
-        {
-            //TODO:
-            return true;
-        }
-        #endif
 
         private void ConnectToHostAndSendRequestCallback<T>(IAsyncResult asynchronousResult)
         {
@@ -2960,9 +2992,9 @@ namespace PubNubMessaging.Core
                                 select item as object).ToArray();
                 if (messages != null && messages.Length > 0)
                 {
-                    int i=0;
                     object[] messageList = messages[0] as object[];
                     #if (USE_MiniJSON)
+					int i=0;
                     foreach (object o in result){
                         if(i==0)
                         {
@@ -4467,6 +4499,33 @@ namespace PubNubMessaging.Core
                     sae.Completed -= new EventHandler<SocketAsyncEventArgs>(socketAsync_Completed<T>);
                     socket.Close();
                 }
+				#elif (UNITY_ANDROID || UNITY_IOS)
+				WebRequest request = WebRequest.Create("http://pubsub.pubnub.com");
+				using(WebResponse response = request.GetResponse ()){
+					if(((HttpWebResponse)response).StatusCode != HttpStatusCode.OK){
+						LoggingMethod.WriteToLog(string.Format("DateTime {0}, Response Code: {1}, Response Desc: {2}", DateTime.Now.ToString(), ((HttpWebResponse)response).StatusCode, ((HttpWebResponse)response).StatusDescription), LoggingMethod.LevelError);
+						callback(false);
+					} else {
+						Stream dataStream = response.GetResponseStream ();
+						using(StreamReader reader = new StreamReader (dataStream)){
+							string responseFromServer = reader.ReadToEnd ();
+							LoggingMethod.WriteToLog(string.Format("DateTime {0}, Response:{1}", DateTime.Now.ToString(), responseFromServer), LoggingMethod.LevelVerbose);
+							callback(true);
+						}
+					}
+				}
+				/*var www = new WWW ("");
+
+				if (www.error == null)
+				{
+					UnityEngine.Debug.Log ("www.text:"+www.text);
+					callback(true);
+				} else {
+					callback(false);
+					UnityEngine.Debug.Log ("www.error:"+www.error);
+					LoggingMethod.WriteToLog(string.Format("DateTime {0}, WWW Error: {1}", DateTime.Now.ToString(), www.error), LoggingMethod.LevelError);
+				} */
+//TODO implement 
                 #else
                 using (UdpClient udp = new UdpClient("pubsub.pubnub.com", 80))
                 {
@@ -5160,7 +5219,6 @@ namespace PubNubMessaging.Core
 
         public Dictionary<string, object> DeserializeToDictionaryOfObject(string jsonString)
         {
-            UnityEngine.Debug.Log ("ser:" +jsonString);
             var output = JsonReader.Deserialize<Dictionary<string, object>>(jsonString) as Dictionary<string, object>;
             return output;
         }
@@ -5218,7 +5276,7 @@ namespace PubNubMessaging.Core
     }
     #endif
 
-    #if (__MonoCS__)
+    #if (__MonoCS__ && !UNITY_ANDROID && !UNITY_IOS)
     class StateObject<T>
     {
         public RequestState<T> RequestState
@@ -5236,4 +5294,76 @@ namespace PubNubMessaging.Core
         public string requestString = null;
     }
     #endif
+
+	#if(UNITY_ANDROID || UNITY_IOS)
+	static class EventExtensions{
+		public static void Raise<T>(this EventHandler<T> handler, object sender, T args)
+			where T : EventArgs
+		{
+			if (handler != null)
+			{
+				handler(sender, args);
+			}
+		}
+	}
+
+	internal class CustomEventArgs<T> : EventArgs
+	{
+		internal string message;
+		internal RequestState<T> pubnubRequestState;
+		internal bool isError;
+		internal bool isTimeout;
+	}
+
+	class CoroutineClass : MonoBehaviour
+	{
+		public event EventHandler<EventArgs> CoroutineComplete;
+		private bool isComplete = false;
+
+		public void Start<T>(string url, RequestState<T> pubnubRequestState, int timeout) {
+			var www = new WWW (url);
+			StartCoroutine(RunCoroutine<T>(www, url, pubnubRequestState));
+
+			ThreadPool.QueueUserWorkItem (delegate(object state){	
+				Thread.Sleep (timeout);
+				if(!isComplete){
+					if(www!=null){
+						www.Dispose();
+					}
+					FireEvent ("", true, true, pubnubRequestState);
+					LoggingMethod.WriteToLog(string.Format("DateTime {0}, WWW Error: {1} sec timeout", DateTime.Now.ToString(), timeout.ToString()), LoggingMethod.LevelError);
+				}
+			});
+		}
+
+		public void FireEvent<T>(string message, bool isError, bool isTimeout, RequestState<T> pubnubRequestState){
+			if(CoroutineComplete != null)
+			{
+				CustomEventArgs<T> cea = new CustomEventArgs<T> ();
+				cea.pubnubRequestState = pubnubRequestState;
+				cea.message = message;
+				cea.isError = isError;
+				cea.isTimeout = isTimeout;
+				CoroutineComplete.Raise (this, cea);
+			}
+		}
+
+		public IEnumerator RunCoroutine<T>(WWW www, string url, RequestState<T> pubnubRequestState){
+
+			yield return www;
+
+			if (www.error == null)
+			{
+				isComplete = true;
+				FireEvent (www.text, false, false, pubnubRequestState);
+			} else {
+				isComplete = true;
+				FireEvent ("", true, false, pubnubRequestState);
+				LoggingMethod.WriteToLog(string.Format("DateTime {0}, WWW Error: {1}", DateTime.Now.ToString(), www.error), LoggingMethod.LevelError);
+			} 
+			this.StopCoroutine("RunCoroutine");
+		}
+	}
+
+	#endif
 }
