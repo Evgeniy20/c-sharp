@@ -195,7 +195,7 @@ public class PubnubExample : MonoBehaviour {
         if (showPublishPopupWindow)
         {
             scrollPosition = GUI.BeginScrollView(new Rect(300,10,415,200), scrollPosition, new Rect(0,0,250,500),false, true);
-			GUI.enabled = false;
+			GUI.enabled = false;					
             pubnubApiResult = GUI.TextArea(new Rect(0,0,400,500), pubnubApiResult);
 			GUI.enabled = true;
         }

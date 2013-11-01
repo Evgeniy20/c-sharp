@@ -36,6 +36,7 @@ NOTE: The callback methods DisplayReturnMessage, DisplayConnectStatusMessage and
 //#define USE_JSONFX_FOR_UNITY
 #endif
 ```
+2.3 The code uses the WWW class provided by Unity to make web requests. Thus this code can be used with the free version of Unity.
 
 #### To run the unit test code (under UnityUnitTest folder of Standalone), in addition to the above step, you need to 
 1. Import UUnit unity package from http://uunit.googlecode.com/files/UUnit_0.4.unitypackage into your Assets (Updates on this pacakage can be obtained from http://wiki.unity3d.com/index.php?title=UUnit). After import, please delete TestCaseDummy.cs and TestCaseTest.cs files from /Assets/Standard Assets/UUnit/UUnitSelfTest folder to avoid unintended test case runs.
