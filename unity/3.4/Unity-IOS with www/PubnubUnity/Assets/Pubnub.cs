@@ -87,6 +87,11 @@ namespace PubNubMessaging.Core
         bool pubnubEnableProxyConfig = true;
         #endif
 
+		#if (UNITY_ANDROID || UNITY_IOS)
+		Thread subscribeRequestThread;
+		Thread nonSubscribeRequestThread;
+		#endif
+
         // Common property changed event
         public event PropertyChangedEventHandler PropertyChanged;
         public void RaisePropertyChanged(string propertyName)
@@ -564,7 +569,13 @@ namespace PubNubMessaging.Core
                     PubnubWebRequest currentRequest = _channelRequest[key];
                     if (currentRequest != null)
                     {
-                        currentRequest.Abort();
+						try{
+                        	currentRequest.Abort();
+						}catch (Exception ex)
+						{
+							LoggingMethod.WriteToLog(string.Format("DateTime {0} TerminatePendingWebRequest currentRequest {1}, Abort ex: {2}", DateTime.Now.ToString(), state.Request.RequestUri.ToString(), ex.ToString()), LoggingMethod.LevelError);
+						}
+
                         LoggingMethod.WriteToLog(string.Format("DateTime {0} TerminatePendingWebRequest {1}", DateTime.Now.ToString(), currentRequest.RequestUri.ToString()), LoggingMethod.LevelInfo);
                     }
                 }
@@ -988,14 +999,19 @@ namespace PubNubMessaging.Core
                     if (_channelRequest.ContainsKey(multiChannelName))
                     {
                         LoggingMethod.WriteToLog(string.Format("DateTime {0}, Aborting previous subscribe/presence requests having channel(s)={1}", DateTime.Now.ToString(), multiChannelName), LoggingMethod.LevelInfo);
-                        PubnubWebRequest webRequest = _channelRequest[multiChannelName];
-                        _channelRequest[multiChannelName] = null;
+						try {
+	                        PubnubWebRequest webRequest = _channelRequest[multiChannelName];
+	                        _channelRequest[multiChannelName] = null;
 
-                        TerminateHeartbeatTimer(webRequest.RequestUri);
+	                        TerminateHeartbeatTimer(webRequest.RequestUri);
 
-                        PubnubWebRequest removedRequest;
-                        _channelRequest.TryRemove(multiChannelName, out removedRequest);
-                        webRequest.Abort();
+	                        PubnubWebRequest removedRequest;
+	                        _channelRequest.TryRemove(multiChannelName, out removedRequest);
+	                        webRequest.Abort();
+						}
+						catch (Exception ex){
+							LoggingMethod.WriteToLog(string.Format("DateTime {0}, Exception in MultiChannelSubscribeInit to abort request: ", DateTime.Now.ToString(), ex.ToString()), LoggingMethod.LevelError);
+						}
                     }
                     else
                     {
@@ -1085,14 +1101,19 @@ namespace PubNubMessaging.Core
                     if (_channelRequest.ContainsKey(multiChannelName))
                     {
                         LoggingMethod.WriteToLog(string.Format("DateTime {0}, Aborting previous subscribe/presence requests having channel(s)={1}", DateTime.Now.ToString(), multiChannelName), LoggingMethod.LevelInfo);
-                        PubnubWebRequest webRequest = _channelRequest[multiChannelName];
-                        _channelRequest[multiChannelName] = null;
+						try{
+	                        PubnubWebRequest webRequest = _channelRequest[multiChannelName];
+	                        _channelRequest[multiChannelName] = null;
 
-                        TerminateHeartbeatTimer(webRequest.RequestUri);
+	                        TerminateHeartbeatTimer(webRequest.RequestUri);
 
-                        PubnubWebRequest removedRequest;
-                        _channelRequest.TryRemove(multiChannelName, out removedRequest);
-                        webRequest.Abort();
+	                        PubnubWebRequest removedRequest;
+	                        _channelRequest.TryRemove(multiChannelName, out removedRequest);
+	                        webRequest.Abort();
+						}
+						catch (Exception ex){
+							LoggingMethod.WriteToLog(string.Format("DateTime {0}, Exception in MultiChannelUnSubscribeInit to abort request: ", DateTime.Now.ToString(), ex.ToString()), LoggingMethod.LevelError);
+						}
                     }
                     else
                     {
@@ -1230,20 +1251,66 @@ namespace PubNubMessaging.Core
 			if (currentState != null)
 			{
 				bool networkConnection = true;
+
 				string channel = (currentState.Channels != null) ? string.Join(",", currentState.Channels) : "";
+				bool channelNetworkState = _channelInternetStatus [channel];
 				if (_channelInternetStatus.ContainsKey(channel)
 				    && (currentState.Type == ResponseType.Subscribe || currentState.Type == ResponseType.Presence)
 				    && overrideTcpKeepAlive)
 				{
 					networkConnection = ClientNetworkStatus.CheckInternetStatus(_pubnetSystemActive, currentState.ErrorCallback, currentState.Channels);
+					UnityEngine.Debug.Log (string.Format("OnPubnubHeartBeatTimeoutCallbackUnity: networkConnection: {0} _pubnetSystemActive: {1}", networkConnection, _pubnetSystemActive));
 				}
 				_channelInternetStatus[channel] = networkConnection;
-
+				UnityEngine.Debug.Log ("OnPubnubHeartBeatTimeoutCallbackUnity: networkConnection2:" + networkConnection);
 				LoggingMethod.WriteToLog(string.Format("DateTime: {0}, OnPubnubHeartBeatTimeoutCallbackUnity - Internet connection = {1}", DateTime.Now.ToString(), networkConnection), LoggingMethod.LevelVerbose);
 				if (!networkConnection)
 				{
 					TerminatePendingWebRequest(currentState);
 				}
+				if (_channelInternetStatus[channel] && !channelNetworkState)
+				{
+					/*if (_channelReconnectTimer.ContainsKey(channel))
+					{
+						_channelReconnectTimer[channel].Change(Timeout.Infinite, Timeout.Infinite);
+						_channelReconnectTimer[channel].Dispose();
+					}*/
+
+					List<object> result = new List<object>();
+					string jsonString = string.Format("[1, \"Internet connection available\"]");
+					result = _jsonPluggableLibrary.DeserializeToListOfObject(jsonString);
+					result.Add(string.Join(",", currentState.Channels));
+					GoToCallback<T>(result, currentState.ConnectCallback);
+
+					LoggingMethod.WriteToLog(string.Format("DateTime {0}, {1} {2} reconnectNetworkCallback. Internet Available : {3}", DateTime.Now.ToString(), channel, currentState.Type, _channelInternetStatus[channel]), LoggingMethod.LevelInfo);
+					/*switch (currentState.Type)
+					{
+						case ResponseType.Subscribe:
+						case ResponseType.Presence:
+						MultiChannelSubscribeRequest<T>(currentState.Type, currentState.Channels, currentState.Timetoken, currentState.UserCallback, currentState.ConnectCallback, currentState.ErrorCallback, true);
+						break;
+						default:
+						break;
+					}*/
+				}
+				else if (_channelInternetRetry[channel] >= _pubnubNetworkCheckRetries)
+				{
+					/*if (_channelReconnectTimer.ContainsKey(channel))
+					{
+						_channelReconnectTimer[channel].Change(Timeout.Infinite, Timeout.Infinite);
+						_channelReconnectTimer[channel].Dispose();
+					}*/
+					switch (currentState.Type)
+					{
+						case ResponseType.Subscribe:
+						case ResponseType.Presence:
+						MultiplexExceptionHandler(currentState.Type, currentState.Channels, currentState.UserCallback, currentState.ConnectCallback, currentState.ErrorCallback, true, false);
+						break;
+						default:
+						break;
+					}
+				}
+
 			}
 		}
 		#else
@@ -1742,7 +1809,7 @@ namespace PubNubMessaging.Core
                     _channelHeartbeatTimer.AddOrUpdate(requestUri, heartBeatTimer, (key, oldState) => heartBeatTimer);
 					#else
 					heartBeatTimer = new Timer(new TimerCallback(OnPubnubHeartBeatTimeoutCallbackUnity<T>), pubnubRequestState, 0,
-				                           (-1 == _pubnubNetworkTcpCheckIntervalInSeconds) ? Timeout.Infinite : _pubnubNetworkTcpCheckIntervalInSeconds * 1000);
+				                           _pubnubNetworkTcpCheckIntervalInSeconds * 1000);
 					_channelHeartbeatTimer.AddOrUpdate(requestUri, heartBeatTimer, (key, oldState) => heartBeatTimer);
 					/*ThreadPool.QueueUserWorkItem(delegate(object state) {
 						int heartBeatCount = 0;
@@ -1772,7 +1839,47 @@ namespace PubNubMessaging.Core
 				}
 				else
 				{
-					SendRequestUsingUnityWww<T>(requestUri, pubnubRequestState);
+					//SendRequestUsingUnityWww<T>(requestUri, pubnubRequestState);
+					UnityEngine.Debug.Log("Trying to send request");
+					if (pubnubRequestState.Type == ResponseType.Subscribe || pubnubRequestState.Type == ResponseType.Presence){
+						UnityEngine.Debug.Log("Trying to send request on subscribeRequestThread");
+						if(subscribeRequestThread != null && subscribeRequestThread.IsAlive){
+							subscribeRequestThread.Join (1);
+						}
+						subscribeRequestThread = new Thread(delegate (object state){
+							SendRequest<T>(pubnubRequestState, request);
+						});
+						subscribeRequestThread.Name= "subscribeRequestThread";
+						subscribeRequestThread.Start ();
+					}
+					else
+					{
+						UnityEngine.Debug.Log("Trying to send request on nonSubscribeRequestThread");
+						if(nonSubscribeRequestThread != null && nonSubscribeRequestThread.IsAlive){	
+							nonSubscribeRequestThread.Join (1);
+						}
+						nonSubscribeRequestThread = new Thread(delegate (object state){
+							SendRequest<T>(pubnubRequestState, request);
+						});
+						nonSubscribeRequestThread.Name= "nonSubscribeRequestThread";
+						nonSubscribeRequestThread.Start ();
+					}
+					UnityEngine.Debug.Log("Running OnPubnubWebRequestTimeout thread");
+					ThreadPool.QueueUserWorkItem (delegate(object state){	
+						Thread.Sleep (GetTimeoutInSecondsForResponseType(pubnubRequestState.Type) * 1000);
+						if(request != null){
+							if (pubnubRequestState.Type == ResponseType.Subscribe || pubnubRequestState.Type == ResponseType.Presence){
+								if(subscribeRequestThread != null && subscribeRequestThread.IsAlive){
+									subscribeRequestThread.Join (1);
+								}
+							} else {
+								if(nonSubscribeRequestThread != null && nonSubscribeRequestThread.IsAlive){	
+									nonSubscribeRequestThread.Join (1);
+								}
+							}
+							OnPubnubWebRequestTimeout<T>(pubnubRequestState, true);
+						}
+					});
 					/*bool requestIsAlive = true;
 					Thread sendRequestThread = new Thread(delegate (object state){
 					//ThreadPool.QueueUserWorkItem (delegate(object state){	
@@ -1834,6 +1941,56 @@ namespace PubNubMessaging.Core
             }
         }
 
+		#if (UNITY_ANDROID || UNITY_IOS)
+		void SendRequest<T> (RequestState<T> pubnubRequestState, PubnubWebRequest request)
+		{
+			CustomEventArgs<T> cea = new CustomEventArgs<T>();
+			cea.pubnubRequestState = pubnubRequestState;
+			UnityEngine.Debug.Log("In send request");
+			try{
+				using(WebResponse response = request.GetResponse ()){
+					UnityEngine.Debug.Log("Response");
+					List<object> result = new List<object>();
+					if(((HttpWebResponse)response).ContentLength <= 0){
+						LoggingMethod.WriteToLog(string.Format("DateTime {0}, Response Code: {1}, Response Desc: {2}", DateTime.Now.ToString(), ((HttpWebResponse)response).StatusCode, ((HttpWebResponse)response).StatusDescription), LoggingMethod.LevelError);
+						throw new Exception("Failed to connect");
+					} else {
+						using(Stream dataStream = response.GetResponseStream ()){
+							using(StreamReader reader = new StreamReader (dataStream)){
+								string responseFromServer = reader.ReadToEnd ();
+								cea.message = responseFromServer;
+								if (cea.pubnubRequestState.Type == ResponseType.Subscribe || cea.pubnubRequestState.Type == ResponseType.Presence){
+									UrlProcessResponseCallbackNonAsync(cea); 
+								}
+								else 
+								{
+									result = WrapResultBasedOnResponseType (cea.pubnubRequestState.Type, cea.message, cea.pubnubRequestState.Channels, cea.pubnubRequestState.Reconnect, cea.pubnubRequestState.Timetoken, cea.pubnubRequestState.ErrorCallback);
+									ProcessResponseCallbacks<T> (result, cea.pubnubRequestState);			
+								}
+								//requestIsAlive = false;
+								LoggingMethod.WriteToLog(string.Format("DateTime {0}, Response:{1}", DateTime.Now.ToString(), responseFromServer), LoggingMethod.LevelVerbose);
+							}
+						}
+					}
+				}
+			}
+			catch(Exception ex)
+			{
+				//requestIsAlive = false;
+				UnityEngine.Debug.Log("Exception sendRequestThread " + ex.ToString());
+				cea.isError = true;
+				cea.message = ex.ToString();
+				UrlProcessResponseCallbackNonAsync(cea); 
+
+				/*if (cea.pubnubRequestState.Type == ResponseType.Subscribe || cea.pubnubRequestState.Type == ResponseType.Presence){
+								}
+								else
+								{
+									UrlRequestCommonExceptionHandler<T>(cea.pubnubRequestState.Type, cea.pubnubRequestState.Channels, false, cea.pubnubRequestState.UserCallback, cea.pubnubRequestState.ConnectCallback, cea.pubnubRequestState.ErrorCallback, false);
+								}*/
+			}
+		}
+		#endif
 		
 		#if(UNITY_ANDROID)      
 		/// <summary>
@@ -2377,7 +2534,7 @@ namespace PubNubMessaging.Core
 
 			try{
 	            if (asynchRequestState.Response != null) asynchRequestState.Response.Close();
-	            //if (asynchRequestState.Request != null) asynchRequestState.Request.Abort();
+	            if (asynchRequestState.Request != null) asynchRequestState.Request.Abort();
 			}
 			catch(Exception ex)
 			{
@@ -2395,6 +2552,7 @@ namespace PubNubMessaging.Core
 				if (_channelInternetStatus.ContainsKey(channel)
 				    && (asynchRequestState.Type == ResponseType.Subscribe || asynchRequestState.Type == ResponseType.Presence))
 				{
+					List<object> result = new List<object>();
 					reconnect = true;
 
 					if (_channelInternetStatus[channel])
@@ -2406,8 +2564,6 @@ namespace PubNubMessaging.Core
 					{
 						_channelInternetRetry.AddOrUpdate(channel, 1, (key, oldValue) => oldValue + 1);
 						LoggingMethod.WriteToLog(string.Format("DateTime {0} {1} channel = {2} _urlRequest - Internet connection retry {3} of {4}", DateTime.Now.ToString(), asynchRequestState.Type, string.Join(",", asynchRequestState.Channels), _channelInternetRetry[channel], _pubnubNetworkCheckRetries), LoggingMethod.LevelInfo);
-
-						List<object> result = new List<object>();
 						string jsonString = string.Format("[0, \"ProcessResponseCallbackWebExceptionHandler Detected internet connection problem. Retrying connection attempt {0} of {1}\"]", _channelInternetRetry[channel], _pubnubNetworkCheckRetries);
 						result = _jsonPluggableLibrary.DeserializeToListOfObject(jsonString);
 						result.Add(string.Join(",", asynchRequestState.Channels));
@@ -2417,6 +2573,17 @@ namespace PubNubMessaging.Core
 					_channelInternetStatus[channel] = false;
 
 					Thread.Sleep(_pubnubWebRequestRetryIntervalInSeconds * 1000);
+
+
+					/*switch (asynchRequestState.Type)
+					{
+						case ResponseType.Subscribe:
+						case ResponseType.Presence:
+						MultiplexInternalCallback<T>(asynchRequestState.Type, result, asynchRequestState.UserCallback, asynchRequestState.ConnectCallback, asynchRequestState.ErrorCallback);
+						break;
+						default:
+						break;
+					}*/
 				}
 			}
 			#elif (!SILVERLIGHT)
@@ -3306,7 +3473,13 @@ namespace PubNubMessaging.Core
             if (currentState != null && currentState.Response == null && currentState.Request != null)
             {
                 currentState.Timeout = true;
-                currentState.Request.Abort();
+				try{
+	                currentState.Request.Abort();
+				}
+				catch (Exception ex){
+					LoggingMethod.WriteToLog(string.Format("DateTime {0}, Exception in OnPubnubWebRequestTimeout to abort request: ", DateTime.Now.ToString(), ex.ToString()), LoggingMethod.LevelError);
+				}
+
                 LoggingMethod.WriteToLog(string.Format("DateTime: {0}, **WP7 OnPubnubWebRequestTimeout**", DateTime.Now.ToString()), LoggingMethod.LevelError);
             }
         }
@@ -3871,7 +4044,12 @@ namespace PubNubMessaging.Core
                 PubnubWebRequest request = (_channelRequest.ContainsKey(multiChannel)) ? _channelRequest[multiChannel] : null;
                 if (request != null)
                 {
-                    request.Abort();
+					try{
+	                    request.Abort();
+					}
+					catch (Exception ex){
+						LoggingMethod.WriteToLog(string.Format("DateTime {0}, Exception in TerminateCurrentSubscriberRequest to abort request: ", DateTime.Now.ToString(), ex.ToString()), LoggingMethod.LevelError);
+					}
 
                     //TerminateHeartbeatTimer(request.RequestUri);
 
@@ -4810,7 +4988,10 @@ namespace PubNubMessaging.Core
             }
             else
             {
+				UnityEngine.Debug.Log (string.Format("CheckInternetStatus"));
+
                 CheckClientNetworkAvailability(CallbackClientNetworkStatus, errorCallback, channels);
+				UnityEngine.Debug.Log (string.Format(" DateTime {0}, CheckSocketConnect: status : {1}", DateTime.Now.ToString(), _status));
                 return _status;
             }
         }
@@ -4831,12 +5012,16 @@ namespace PubNubMessaging.Core
             state.Callback = callback;
             state.ErrorCallback = errorCallback;
             state.Channels = channels;
-			Thread sendRequestThread = new Thread(delegate (){
+			#if (UNITY_ANDROID || UNITY_IOS)
+			CheckSocketConnect<T>(state);
+			#else
+			/*Thread sendRequestThread = new Thread(delegate (){
 				CheckSocketConnect<T>(state);
 			});
 			sendRequestThread.Name= "CheckSocketConnect Thread";
-			sendRequestThread.Start();
-            //ThreadPool.QueueUserWorkItem(CheckSocketConnect<T>, state);
+			//sendRequestThread.Start();*/
+            ThreadPool.QueueUserWorkItem(CheckSocketConnect<T>, state);
+			#endif
             #if (SILVERLIGHT || WINDOWS_PHONE)
             mres.WaitOne();
 			#elif(!UNITY_ANDROID && !UNITY_IOS)
@@ -4867,22 +5052,30 @@ namespace PubNubMessaging.Core
                     socket.Close();
                 }
 				#elif (UNITY_ANDROID || UNITY_IOS)
+				UnityEngine.Debug.Log (string.Format(" DateTime {0}, CheckSocketConnect calling pubnub", DateTime.Now.ToString()));
 				WebRequest request = WebRequest.Create("http://pubsub.pubnub.com");
+
+				request.Timeout = 30*1000;
+				UnityEngine.Debug.Log (string.Format(" DateTime {0}, CheckSocketConnect calling:", DateTime.Now.ToString()));
 				using(WebResponse response = request.GetResponse ()){
 					if(((HttpWebResponse)response).ContentLength <= 0){
 						LoggingMethod.WriteToLog(string.Format("DateTime {0}, Response Code: {1}, Response Desc: {2}", DateTime.Now.ToString(), ((HttpWebResponse)response).StatusCode, ((HttpWebResponse)response).StatusDescription), LoggingMethod.LevelError);
 						_status = false;
+						UnityEngine.Debug.Log (string.Format(" DateTime {0}, CheckSocketConnect: Failed to connect", DateTime.Now.ToString()));
 						throw new Exception("Failed to connect");
 					} else {
-						Stream dataStream = response.GetResponseStream ();
-						using(StreamReader reader = new StreamReader (dataStream)){
-							string responseFromServer = reader.ReadToEnd ();
-							LoggingMethod.WriteToLog(string.Format("DateTime {0}, Response:{1}", DateTime.Now.ToString(), responseFromServer), LoggingMethod.LevelVerbose);
-							_status = true;
-							callback(true);
+						using(Stream dataStream = response.GetResponseStream ()){
+							using(StreamReader reader = new StreamReader (dataStream)){
+								string responseFromServer = reader.ReadToEnd ();
+								LoggingMethod.WriteToLog(string.Format("DateTime {0}, Response:{1}", DateTime.Now.ToString(), responseFromServer), LoggingMethod.LevelVerbose);
+								_status = true;
+								UnityEngine.Debug.Log (string.Format(" DateTime {0}, CheckSocketConnect: true", DateTime.Now.ToString()));
+								callback(true);
+							}
 						}
 					}
 				}
+
                 #else
                 using (UdpClient udp = new UdpClient("pubsub.pubnub.com", 80))
                 {
@@ -4896,19 +5089,24 @@ namespace PubNubMessaging.Core
                 }
                 #endif
             }
-            catch (Exception ex)
-            {
+			catch (WebException webEx){
 				#if (UNITY_ANDROID || UNITY_IOS)
-				if(ex.Message.Contains("404")){
+				if(webEx.Message.Contains("404")){
 					_status =true;
 					callback(true);
+					UnityEngine.Debug.Log (string.Format(" DateTime {0}, CheckSocketConnect: 404", DateTime.Now.ToString()));
 				} else {
 					_status =false;
-					ParseCheckSocketConnectException<T>(ex, channels, errorCallback, callback);
+					UnityEngine.Debug.Log (string.Format(" DateTime {0}, CheckSocketConnect: false Ex: {1}", DateTime.Now.ToString(), webEx.ToString()));
+					ParseCheckSocketConnectException<T>(webEx, channels, errorCallback, callback);
 				}
 				#else
-				ParseCheckSocketConnectException<T>(ex, channels, errorCallback, callback);
+				ParseCheckSocketConnectException<T>(webEx, channels, errorCallback, callback);
 				#endif
+			}
+            catch (Exception ex)
+            {
+				ParseCheckSocketConnectException<T>(ex, channels, errorCallback, callback);
             }
 			//#if (!UNITY_ANDROID && !UNITY_IOS)
             mres.Set();
@@ -5700,12 +5898,13 @@ namespace PubNubMessaging.Core
 	{
 		public event EventHandler<EventArgs> CoroutineComplete;
 		private bool isComplete = false;
+		WWW www;
 
 		public void Start<T>(string url, RequestState<T> pubnubRequestState, int timeout) {
-			var www = new WWW (url);
-			StartCoroutine(RunCoroutine<T>(www, url, pubnubRequestState));
-			Thread coroutineThread = new Thread(delegate (object state){	
-			//ThreadPool.QueueUserWorkItem (delegate(object state){	
+			 
+			StartCoroutine(RunCoroutine<T>(url, pubnubRequestState, timeout));
+			//Thread coroutineThread = new Thread(delegate (object state){	
+			ThreadPool.QueueUserWorkItem (delegate(object state){	
 				Thread.Sleep (timeout);
 				if(!isComplete){
 					if(www!=null){
@@ -5716,8 +5915,8 @@ namespace PubNubMessaging.Core
 				}
 				Thread.CurrentThread.Join(1);
 			});
-			coroutineThread.Name = "Coroutine start thread";
-			coroutineThread.Start ();
+			//coroutineThread.Name = "Coroutine start thread";
+			//coroutineThread.Start ();
 		}
 
 		public void FireEvent<T>(string message, bool isError, bool isTimeout, RequestState<T> pubnubRequestState){
@@ -5732,9 +5931,11 @@ namespace PubNubMessaging.Core
 			}
 		}
 
-		public IEnumerator RunCoroutine<T>(WWW www, string url, RequestState<T> pubnubRequestState){
-
+		public IEnumerator RunCoroutine<T>(string url, RequestState<T> pubnubRequestState, int timeout){
+			www = new WWW (url);
+			LoggingMethod.WriteToLog(string.Format("DateTime {0},  calling www", DateTime.Now.ToString()), LoggingMethod.LevelError);
 			yield return www;
+			LoggingMethod.WriteToLog(string.Format("DateTime {0}, After yield WWW", DateTime.Now.ToString()), LoggingMethod.LevelError);
 
 			if (www.error == null)
 			{
@@ -5742,6 +5943,7 @@ namespace PubNubMessaging.Core
 				FireEvent (www.text, false, false, pubnubRequestState);
 			} else {
 				isComplete = true;
+				//Thread.Sleep(timeout);
 				FireEvent (www.error, true, false, pubnubRequestState);
 				LoggingMethod.WriteToLog(string.Format("DateTime {0}, WWW Error: {1}", DateTime.Now.ToString(), www.error), LoggingMethod.LevelError);
 			} 
