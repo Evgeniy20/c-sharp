@@ -1271,12 +1271,15 @@ namespace PubNubMessaging.Core
                     networkConnection = ClientNetworkStatus.CheckInternetStatus(_pubnetSystemActive, currentState.ErrorCallback, currentState.Channels);
                 }
                 _channelInternetStatus[channel] = networkConnection;
+                if(!networkConnection){
+                    ClientNetworkStatus.IsStatusPosted = false;
+                }
                 LoggingMethod.WriteToLog(string.Format("DateTime: {0}, OnPubnubHeartBeatTimeoutCallbackUnity - Internet connection = {1}", DateTime.Now.ToString(), networkConnection), LoggingMethod.LevelVerbose);
                 if (!networkConnection)
                 {
                     TerminatePendingWebRequest(currentState);
                 }
-                if (networkConnection && !channelNetworkState)
+                if (networkConnection && !channelNetworkState &&! ClientNetworkStatus.IsStatusPosted)
                 {
                     _channelInternetRetry [channel] = 0;
                     ICollection<string> keyCollection = _channelInternetStatus.Keys;
@@ -1291,6 +1294,7 @@ namespace PubNubMessaging.Core
                     GoToCallback<T>(result, currentState.ConnectCallback);
 
                     LoggingMethod.WriteToLog(string.Format("DateTime {0}, {1} {2} reconnectNetworkCallback. Internet Available : {3}", DateTime.Now.ToString(), channel, currentState.Type, _channelInternetStatus[channel]), LoggingMethod.LevelInfo);
+                    ClientNetworkStatus.IsStatusPosted = true;
                 }
                 else if (_channelInternetRetry[channel] >= _pubnubNetworkCheckRetries)
                 {
@@ -4754,6 +4758,8 @@ namespace PubNubMessaging.Core
         private static bool _status = true;
         private static bool _failClientNetworkForTesting = false;
 
+        private static bool _statusPosted = false;
+
         private static IJsonPluggableLibrary _jsonPluggableLibrary;
         internal static IJsonPluggableLibrary JsonPluggableLibrary
         {
@@ -4804,6 +4810,12 @@ namespace PubNubMessaging.Core
         public static bool GetInternetStatus()
         {
             return _status;
+        }
+
+        public static bool IsStatusPosted
+        {
+            get{ return _statusPosted;}
+            set{ _statusPosted = value;}
         }
 
         private static void CallbackClientNetworkStatus(bool status)
