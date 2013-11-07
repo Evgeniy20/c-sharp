@@ -168,16 +168,23 @@ public class PubnubExample : MonoBehaviour {
             AsyncOrNonAsyncCall (PubnubState.Time);
         }
 
+		#if(UNITY_IOS || UNITY_ANDROID)
+		GUI.enabled = false;
+		#endif
         if (GUI.Button(new Rect(10,490,120,25), "Disable Network"))
         {
             InstantiatePubnub();
             AsyncOrNonAsyncCall (PubnubState.DisableNetwork);
         }
+				
         if (GUI.Button(new Rect(140,490,120,25), "Enable Network"))
         {
             InstantiatePubnub();
             AsyncOrNonAsyncCall (PubnubState.EnableNetwork);
         }
+		#if(UNITY_IOS || UNITY_ANDROID)
+		GUI.enabled = true;
+		#endif
 
         if (GUI.Button(new Rect(10,520,120,25), "Disconnect/Retry"))
         {
@@ -188,12 +195,16 @@ public class PubnubExample : MonoBehaviour {
         if (showPublishPopupWindow)
         {
             scrollPosition = GUI.BeginScrollView(new Rect(300,10,415,200), scrollPosition, new Rect(0,0,250,500),false, true);
+			GUI.enabled = false;					
             pubnubApiResult = GUI.TextArea(new Rect(0,0,400,500), pubnubApiResult);
+			GUI.enabled = true;
         }
         else
         {
-            scrollPosition = GUI.BeginScrollView(new Rect(300,10,415,600), scrollPosition, new Rect(0,0,375,1200),false, true);
-            pubnubApiResult = GUI.TextArea(new Rect(0,0,400,1200), pubnubApiResult);            
+            scrollPosition = GUI.BeginScrollView(new Rect(300,10,300,600), scrollPosition, new Rect(0,0,300,1600),false, true);
+			GUI.enabled = false;
+            pubnubApiResult = GUI.TextArea(new Rect(0,0,300,1600), pubnubApiResult);            
+			GUI.enabled = true;
         }
         GUI.EndScrollView();
 
@@ -380,44 +391,49 @@ public class PubnubExample : MonoBehaviour {
     void Update()
     {
         if (pubnub == null) return;
-		
-        UnityEngine.Debug.Log(DateTime.Now.ToLongTimeString() + " Update called " + pubnubApiResult.Length.ToString());            
-        string recordTest;
-        System.Text.StringBuilder sbResult = new System.Text.StringBuilder();
 
-        int existingLen = pubnubApiResult.Length;
-        int newRecordLen = 0;
-        sbResult.Append(pubnubApiResult);
+		try{
+	        //UnityEngine.Debug.Log(DateTime.Now.ToLongTimeString() + " Update called " + pubnubApiResult.Length.ToString());            
+	        string recordTest;
+	        System.Text.StringBuilder sbResult = new System.Text.StringBuilder();
 
-        if (recordQueue.TryPeek(out recordTest))
-        {
-            string currentRecord = "";
-            while (recordQueue.TryDequeue(out currentRecord))
-            {
-                sbResult.AppendLine(currentRecord);
-            }
+	        int existingLen = pubnubApiResult.Length;
+	        int newRecordLen = 0;
+	        sbResult.Append(pubnubApiResult);
 
-            pubnubApiResult = sbResult.ToString();
+	        if (recordQueue.TryPeek(out recordTest))
+	        {
+	            string currentRecord = "";
+	            while (recordQueue.TryDequeue(out currentRecord))
+	            {
+	                sbResult.AppendLine(currentRecord);
+	            }
 
-            newRecordLen = pubnubApiResult.Length - existingLen;
-            int windowLength = 2000;
+	            pubnubApiResult = sbResult.ToString();
 
-            if (pubnubApiResult.Length > windowLength)
-            {
-                bool trimmed = false;
-                if (pubnubApiResult.Length > windowLength){
-                    trimmed = true;
-                    int lengthToTrim = (((pubnubApiResult.Length - windowLength) < pubnubApiResult.Length -newRecordLen)? pubnubApiResult.Length - windowLength : pubnubApiResult.Length - newRecordLen);
-                    pubnubApiResult = pubnubApiResult.Substring(lengthToTrim);
-                }
-                if(trimmed)
-                {
-                    string prefix = "Output trimmed...\n";
+	            newRecordLen = pubnubApiResult.Length - existingLen;
+	            int windowLength = 1500;
 
-                    pubnubApiResult = prefix + pubnubApiResult;
-                }
-            }
-        }
+	            if (pubnubApiResult.Length > windowLength)
+	            {
+	                bool trimmed = false;
+	                if (pubnubApiResult.Length > windowLength){
+	                    trimmed = true;
+	                    int lengthToTrim = (((pubnubApiResult.Length - windowLength) < pubnubApiResult.Length -newRecordLen)? pubnubApiResult.Length - windowLength : pubnubApiResult.Length - newRecordLen);
+	                    pubnubApiResult = pubnubApiResult.Substring(lengthToTrim);
+	                }
+	                if(trimmed)
+	                {
+	                    string prefix = "Output trimmed...\n";
+
+	                    pubnubApiResult = prefix + pubnubApiResult;
+	                }
+	            }
+	        } 
+		}
+		catch (Exception ex){
+			Debug.Log ("Update exception:" + ex.ToString());
+		}
     }
 
     void OnApplicationQuit()

@@ -9,6 +9,8 @@ After checking out the general setup video, [For iOS targets](https://vimeo.com/
 Error Callback parameter is being introduced in all operation/non-operation methods of C# Core Pubnub.cs file. 
 If you had been using a previous version, your application might break due to signature difference.
 
+The code uses the WWW class provided by Unity to make web requests. Thus this code can be used with the free version of Unity.
+
 #### Cheatsheet to migrate to the new Error Callback implementation
 
 ```
@@ -48,9 +50,8 @@ NOTE: The callback methods DisplayReturnMessage, DisplayConnectStatusMessage and
 4. In the dialog the opens select iOS under the platform and click "Switch Platform".
 5. Click "Build and Run"
 6. This will run the PubNub example in the iPad simulator
-7. You may get an error SystemException: System.Net.Sockets are supported only on Unity Pro. Referenced from assembly 'Assembly-CSharp'. If so you need to use the Unity3d pro.
-8. The code uses the pre-compiler flag UNITY_IOS to distinguish between other platforms.
-9. Target iOS version 4.0 and above. 
+7. The code uses the pre-compiler flag UNITY_IOS to distinguish between other platforms.
+8. Target iOS version 4.0 and above. 
 
 #### Running the Tests
 

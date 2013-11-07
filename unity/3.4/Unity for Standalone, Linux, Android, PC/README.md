@@ -9,6 +9,8 @@ After checking out the general setup video, [For iOS targets](https://vimeo.com/
 Error Callback parameter is being introduced in all operation/non-operation methods of C# Core Pubnub.cs file. 
 If you had been using a previous version, your application might break due to signature difference.
 
+The code uses the WWW class provided by Unity to make web requests. Thus this code can be used with the free version of Unity.
+
 #### Cheatsheet to migrate to the new Error Callback implementation
 
 ```
@@ -21,7 +23,7 @@ NOTE: The callback methods DisplayReturnMessage, DisplayConnectStatusMessage and
 ```
 
 #### Prerequisites
-1. Install a free Full version of Unity 4 Pro from http://unity3d.com/unity/download/ (Unity 4 is recommended, but current/later versions should be ok). MonoDevelop IDE tool will be installed as part of Unity to write C# scripts.
+1. Install a free Full version of Unity 4 from http://unity3d.com/unity/download/ (Unity 4 is recommended, but current/later versions should be ok). MonoDevelop IDE tool will be installed as part of Unity to write C# scripts.
 2. For Unity, JSONFX is needed for the serialization library. 
 3. To use JSONFX we have defined a pre-compiler variable USE_JSONFX. The other serialization libraries used in the pubnub.cs class are the default from the builtin .NET class (activated when the pre-compiler directive USE_DOTNET_SERIALIZATION is used) and Newtonsoft.Json (activated when neither USE_JSONFX nor USE_DOTNET_SERIALIZATION is defined). Both of these libraries won't work with UNITY. So you need to be sure the pre-compiler variable USE_JSONFX is "defined" at the top of the pubnub.cs class (default behavior).
 3. The unit tests for unity also require JSONFX library for serialization.
@@ -61,10 +63,9 @@ NOTE: The callback methods DisplayReturnMessage, DisplayConnectStatusMessage and
 2. In the dialog the opens select Android under the platform and click "Switch Platform".
 3. Click "Build and Run". This button may be disabled or you may get an error that no devices are found. To resolve this please ensure that the android emulator is running.
 4. This will run the PubNub example in the Android emulator. 
-5. You may get an error SystemException: System.Net.Sockets are supported only on Unity Pro. Referenced from assembly 'Assembly-CSharp'. If so you need to use the Unity3d pro.
-6. The code uses the pre-compiler flag UNITY_ANDROID to distinguish between other platforms.
-7. If running on the emulator please enable GPU emulation.
-8. Target Android version 4 (Ice cream sandwich) and above.
+5. The code uses the pre-compiler flag UNITY_ANDROID to distinguish between other platforms.
+6. If running on the emulator please enable GPU emulation.
+7. Target Android version 4 (Ice cream sandwich) and above.
 
 
 #### Running the Tests
