@@ -40,7 +40,7 @@ public class PubnubExample : MonoBehaviour {
     string networkRetryIntervalInSeconds = "10";
     string heartbeatIntervalInSeconds = "10";
 
-    string channel = "hello_my_channel";
+    string channel = "hello_world";
     string publishedMessage = "";
 
     static Pubnub pubnub;
@@ -51,24 +51,33 @@ public class PubnubExample : MonoBehaviour {
     Vector2 scrollPosition = Vector2.zero;
     string pubnubApiResult = "";
 
-	bool requestInProcess = false;
+    bool requestInProcess = false;
 
     bool showPublishPopupWindow = false;
 
-    Rect publishWindowRect = new Rect(270, 250, 300, 150);
+    Rect publishWindowRect = new Rect(60, 365, 300, 150);
 
     bool allowUserSettingsChange = true;
-
+    
     public void OnGUI()
     {
         GUI.enabled = !allowUserSettingsChange;
         GUIStyle customStyle = new GUIStyle(GUI.skin.button);
         customStyle.fontSize = 10;
-        //customStyle.normal.background
         customStyle.hover.textColor = Color.yellow;
         customStyle.fontStyle = FontStyle.Italic;
-        customStyle.fixedHeight = 20;
-        if (GUI.Button(new Rect(200,10,90,25), "Reset Settings",customStyle))
+
+        float fLeft = 20;
+        float fLeftInit = 20;
+        float fTop = 10;
+        float fTopInit = 10;
+        float fRowHeight = 35;
+        float fHeight = 25;
+        float fButtonHeight = 35;
+
+        fLeft = fLeftInit;
+        fTop = fTopInit;
+        if (GUI.Button(new Rect(fLeft, fTop, 120, 30), "Reset Settings",customStyle))
         {
             allowUserSettingsChange = true;
             ResetPubnubInstance();
@@ -77,62 +86,107 @@ public class PubnubExample : MonoBehaviour {
 
         GUI.enabled = allowUserSettingsChange;
 
-        ssl = GUI.Toggle(new Rect(10,10,200,25), ssl," Enable SSL ");
+        fLeft = fLeftInit + 150;
+        ssl = GUI.Toggle(new Rect(fLeft, fTop, 100, fButtonHeight), ssl," Enable SSL ");
 
-        resumeOnReconnect = GUI.Toggle(new Rect(10,30,200,25), resumeOnReconnect," Resume On Reconnect ");
+        fLeft = fLeft + 100;
+        resumeOnReconnect = GUI.Toggle(new Rect(fLeft, fTop, 200, fButtonHeight), resumeOnReconnect," Resume On Reconnect ");
 
-        GUI.Label(new Rect(10,70,70,25), "Cipher Key");
-        cipherKey = GUI.TextField(new Rect(80,70,150,25),cipherKey);
+        fTop = fTopInit + fRowHeight;
+        fLeft = fLeftInit;
+        GUI.Label(new Rect(fLeft, fTop, 70, fHeight), "Cipher Key");
 
-        GUI.Label(new Rect(10,100,70,25), "Secret Key");
-        secretKey = GUI.TextField(new Rect(80,100,150,25),secretKey);
+        fLeft = fLeft + 75;
+        cipherKey = GUI.TextField(new Rect(fLeft, fTop, 130, fHeight),cipherKey);
 
-        GUI.Label(new Rect(10,130,70,25), "UUID");
-        uuid = GUI.TextField(new Rect(80,130,200,25),uuid);
+        fLeft = fLeft + 145;
+        GUI.Label(new Rect(fLeft, fTop, 70, fHeight), "UUID");
 
-        GUI.Label(new Rect(10,170,200,25), "Subscriber Timeout (in sec)");
-        subscribeTimeoutInSeconds = GUI.TextField(new Rect(200,170,50,25),subscribeTimeoutInSeconds,6);
+        fLeft = fLeft + 45;
+        uuid = GUI.TextField(new Rect(fLeft, fTop, 170, fHeight),uuid);
+
+        fTop = fTopInit + 2 * fRowHeight;
+        fLeft = fLeftInit;
+        GUI.Label(new Rect(fLeft, fTop, 70, fHeight), "Secret Key");
+        fLeft = fLeft + 75;
+        secretKey = GUI.TextField(new Rect(fLeft, fTop, 130, fHeight),secretKey);
+
+        fLeft = fLeft + 145;
+        GUI.Label(new Rect(fLeft, fTop, 160, fHeight), "Subscribe Timeout (secs)");
+
+        fLeft = fLeft + 185;
+        subscribeTimeoutInSeconds = GUI.TextField(new Rect(fLeft, fTop, 30, 25),subscribeTimeoutInSeconds,6);
         subscribeTimeoutInSeconds = Regex.Replace(subscribeTimeoutInSeconds, "[^0-9]", "");
 
-        GUI.Label(new Rect(10,200,200,25), "Non Subscribe Timeout (in sec)");
-        operationTimeoutInSeconds = GUI.TextField(new Rect(200,200,50,25),operationTimeoutInSeconds,6);
-        operationTimeoutInSeconds = Regex.Replace(operationTimeoutInSeconds, "[^0-9]", "");
+        fTop = fTopInit + 3 * fRowHeight;
+        fLeft = fLeftInit;
+        GUI.Label(new Rect(fLeft, fTop, 160, fHeight), "MAX retries");
 
-        GUI.Label(new Rect(10,230,200,25), "Number of MAX retries");
-        networkMaxRetries = GUI.TextField(new Rect(200,230,50,25),networkMaxRetries,6);
+        fLeft = fLeft + 175;
+        networkMaxRetries = GUI.TextField(new Rect(fLeft, fTop, 30, fHeight),networkMaxRetries,6);
         networkMaxRetries = Regex.Replace(networkMaxRetries, "[^0-9]", "");
 
-        GUI.Label(new Rect(10,260,200,25), "Retry Interval (in sec)");
-        networkRetryIntervalInSeconds = GUI.TextField(new Rect(200,260,50,25),networkRetryIntervalInSeconds,6);
+        fLeft = fLeft + 45;
+        GUI.Label(new Rect(fLeft, fTop, 180, fHeight), "Non Subscribe Timeout (secs)");
+
+        fLeft = fLeft + 185;
+        operationTimeoutInSeconds = GUI.TextField(new Rect(fLeft, fTop, 30, fHeight),operationTimeoutInSeconds,6);
+        operationTimeoutInSeconds = Regex.Replace(operationTimeoutInSeconds, "[^0-9]", "");
+
+        fTop = fTopInit + 4 * fRowHeight;
+        fLeft = fLeftInit;
+        GUI.Label(new Rect(fLeft, fTop, 160, fHeight), "Retry Interval (secs)");
+
+        fLeft = fLeft + 175;
+        networkRetryIntervalInSeconds = GUI.TextField(new Rect(fLeft, fTop, 30, fHeight),networkRetryIntervalInSeconds,6);
         networkRetryIntervalInSeconds = Regex.Replace(networkRetryIntervalInSeconds, "[^0-9]", "");
 
-        GUI.Label(new Rect(10,290,200,25), "Heartbeat Interval (in sec)");
-        heartbeatIntervalInSeconds = GUI.TextField(new Rect(200,290,50,25),heartbeatIntervalInSeconds,6);
+        fLeft = fLeft + 45;
+        GUI.Label(new Rect(fLeft, fTop, 180, fHeight), "Heartbeat Interval (secs)");
+        fLeft = fLeft + 185;
+        heartbeatIntervalInSeconds = GUI.TextField(new Rect(fLeft, fTop, 30, fHeight),heartbeatIntervalInSeconds,6);
         heartbeatIntervalInSeconds = Regex.Replace(heartbeatIntervalInSeconds, "[^0-9]", "");
 
         GUI.enabled = true;
 
-        GUI.Label(new Rect(10,330,100,25), "Channel Name");
-        channel = GUI.TextField(new Rect(100,330,150,25),channel,100);
+        fTop = fTopInit + 5 * fRowHeight;
+        fLeft = fLeftInit;
+        GUI.Label(new Rect(fLeft, fTop, 90, fHeight), "Channel Name");
+        fLeft = fLeft + 95;
+        channel = GUI.TextField(new Rect(fLeft, fTop, 200, fHeight),channel,100);
 
-        if (GUI.Button(new Rect(10,370,120,25), "Presence"))
+        fLeft = fLeft + 220;
+        if (GUI.Button(new Rect(fLeft, fTop, 120, fButtonHeight), "Disconnect/Retry"))
+        {
+            InstantiatePubnub();
+            AsyncOrNonAsyncCall (PubnubState.DisconnectRetry);
+        }
+
+        fTop = fTopInit + 6 * fRowHeight + 10;
+        fLeft = fLeftInit;
+        if (GUI.Button(new Rect(fLeft, fTop, 120, fButtonHeight), "Presence"))
         {
             InstantiatePubnub();
             AsyncOrNonAsyncCall (PubnubState.Presence);
         }
-        if (GUI.Button(new Rect(140,370,120,25), "Subscribe"))
+
+        fLeft = fLeft + 155;
+        if (GUI.Button(new Rect(fLeft, fTop, 120, fButtonHeight), "Subscribe"))
         {
             InstantiatePubnub();
             AsyncOrNonAsyncCall (PubnubState.Subscribe);
         }
 
-        if (GUI.Button(new Rect(10,400,120,25), "Detailed History"))
+        fLeft = fLeft + 160;
+        if (GUI.Button(new Rect(fLeft, fTop, 120, fButtonHeight), "Detailed History"))
         {
             InstantiatePubnub();
             AsyncOrNonAsyncCall (PubnubState.DetailedHistory);
         }
 
-        if (GUI.Button(new Rect(140,400,120,25), "Publish"))
+        fTop = fTopInit + 7 * fRowHeight + 10 * 2;
+        fLeft = fLeftInit;
+        if (GUI.Button(new Rect(fLeft, fTop, 120, fButtonHeight), "Publish"))
         {
             InstantiatePubnub();
             allowUserSettingsChange = false;
@@ -145,67 +199,60 @@ public class PubnubExample : MonoBehaviour {
             GUI.backgroundColor = new Color(1,1,1,1);
         }
 
-        if (GUI.Button(new Rect(10,430,120,25), "Unsubscribe"))
+        fLeft = fLeft + 155;
+        if (GUI.Button(new Rect(fLeft, fTop, 120, fButtonHeight), "Unsubscribe"))
         {
             InstantiatePubnub();
             AsyncOrNonAsyncCall (PubnubState.Unsubscribe);
         }
 
-        if (GUI.Button(new Rect(140,430,120,25), "Here Now"))
+        fLeft = fLeft + 160;
+        if (GUI.Button(new Rect(fLeft, fTop, 120, fButtonHeight), "Presence-Unsub"))
+        {
+            InstantiatePubnub();
+            AsyncOrNonAsyncCall (PubnubState.PresenceUnsubscribe);
+        }
+
+        fTop = fTopInit + 8 * fRowHeight + 10 * 3;
+        fLeft = fLeftInit;
+        if (GUI.Button(new Rect(fLeft, fTop, 75, fButtonHeight), "Here Now"))
         {
             InstantiatePubnub();
             AsyncOrNonAsyncCall (PubnubState.HereNow);
         }
 
-        if (GUI.Button(new Rect(10,460,120,25), "Presence-Unsub"))
-        {
-            InstantiatePubnub();
-            AsyncOrNonAsyncCall (PubnubState.PresenceUnsubscribe);
-        }
-        if (GUI.Button(new Rect(140,460,120,25), "Time"))
+        fLeft = fLeft + 95;
+        if (GUI.Button(new Rect(fLeft, fTop, 60, fButtonHeight), "Time"))
         {
             InstantiatePubnub();
             AsyncOrNonAsyncCall (PubnubState.Time);
         }
-
-		#if(UNITY_IOS || UNITY_ANDROID)
-		GUI.enabled = false;
-		#endif
-        if (GUI.Button(new Rect(10,490,120,25), "Disable Network"))
+    
+        #if(UNITY_IOS || UNITY_ANDROID)
+        GUI.enabled = false;
+        #endif
+        fLeft = fLeft + 80;
+        if (GUI.Button(new Rect(fLeft, fTop, 120, fButtonHeight), "Disable Network"))
         {
             InstantiatePubnub();
             AsyncOrNonAsyncCall (PubnubState.DisableNetwork);
         }
-				
-        if (GUI.Button(new Rect(140,490,120,25), "Enable Network"))
+        fLeft = fLeft + 140;        
+        if (GUI.Button(new Rect(fLeft, fTop, 120, fButtonHeight), "Enable Network"))
         {
             InstantiatePubnub();
             AsyncOrNonAsyncCall (PubnubState.EnableNetwork);
         }
-		#if(UNITY_IOS || UNITY_ANDROID)
-		GUI.enabled = true;
-		#endif
+        #if(UNITY_IOS || UNITY_ANDROID)
+        GUI.enabled = true;
+        #endif
 
-        if (GUI.Button(new Rect(10,520,120,25), "Disconnect/Retry"))
-        {
-            InstantiatePubnub();
-			AsyncOrNonAsyncCall (PubnubState.DisconnectRetry);
-        }
-
-        if (showPublishPopupWindow)
-        {
-            scrollPosition = GUI.BeginScrollView(new Rect(300,10,415,200), scrollPosition, new Rect(0,0,250,500),false, true);
-			GUI.enabled = false;					
-            pubnubApiResult = GUI.TextArea(new Rect(0,0,400,500), pubnubApiResult);
-			GUI.enabled = true;
-        }
-        else
-        {
-            scrollPosition = GUI.BeginScrollView(new Rect(300,10,300,600), scrollPosition, new Rect(0,0,300,1600),false, true);
-			GUI.enabled = false;
-            pubnubApiResult = GUI.TextArea(new Rect(0,0,300,1600), pubnubApiResult);            
-			GUI.enabled = true;
-        }
+        fTop = fTopInit + 9 * fRowHeight + 10 * 4;
+        fLeft = fLeftInit;
+        scrollPosition = GUI.BeginScrollView(new Rect(fLeft, fTop, 430, 320), scrollPosition, new Rect(fLeft, fTop, 430, 320),false, true);
+        GUI.enabled = false;
+        pubnubApiResult = GUI.TextArea(new Rect(fLeft, fTop, 430, 320), pubnubApiResult);            
+        GUI.enabled = true;
         GUI.EndScrollView();
 
     }
@@ -219,39 +266,39 @@ public class PubnubExample : MonoBehaviour {
     void AsyncOrNonAsyncCall (PubnubState pubnubState)
     {
 #if(UNITY_IOS)
-		if(pubnubState == PubnubState.DisconnectRetry)
-		{
-			if(!requestInProcess)
-			{
-				requestInProcess = true;
-				ThreadPool.QueueUserWorkItem(new WaitCallback(DoAction), pubnubState);
-			}
-		}
-		else
-		{
-        	DoAction(pubnubState);
-		}
+        if(pubnubState == PubnubState.DisconnectRetry)
+        {
+            if(!requestInProcess)
+            {
+                requestInProcess = true;
+                ThreadPool.QueueUserWorkItem(new WaitCallback(DoAction), pubnubState);
+            }
+        }
+        else
+        {
+            DoAction(pubnubState);
+        }
 #else
         ThreadPool.QueueUserWorkItem(new WaitCallback(DoAction), pubnubState);
 #endif
     }
-	
-	void Awake(){
-		Application.RegisterLogCallback(new Application.LogCallback(CaptureLogs));
-	}
-	
-	void CaptureLogs(string condition, string stacktrace, LogType logType)
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.AppendLine("Type");
-		sb.AppendLine(logType.ToString());
-		sb.AppendLine("Condition");
-		sb.AppendLine(condition);
-		sb.AppendLine("stacktrace");
-		sb.AppendLine(stacktrace);
-		//UnityEngine.Debug.Log("Type: ", );
-	}
-	
+    
+    void Awake(){
+        Application.RegisterLogCallback(new Application.LogCallback(CaptureLogs));
+    }
+    
+    void CaptureLogs(string condition, string stacktrace, LogType logType)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine("Type");
+        sb.AppendLine(logType.ToString());
+        sb.AppendLine("Condition");
+        sb.AppendLine(condition);
+        sb.AppendLine("stacktrace");
+        sb.AppendLine(stacktrace);
+        //UnityEngine.Debug.Log("Type: ", );
+    }
+    
     private void DoAction (object pubnubState)
     {
         try
@@ -293,12 +340,12 @@ public class PubnubExample : MonoBehaviour {
             } else if ((PubnubState)pubnubState == PubnubState.DisconnectRetry) {
                 AddToPubnubResultContainer ("Running Disconnect Retry");
                 pubnub.TerminateCurrentSubscriberRequest();
-				requestInProcess = false;
+                requestInProcess = false;
             }
         }
         catch (Exception ex)
         {
-            UnityEngine.Debug.Log (ex.ToString());
+            UnityEngine.Debug.Log ("DoAction exception:"+ ex.ToString());
         }
     }
 
@@ -324,14 +371,14 @@ public class PubnubExample : MonoBehaviour {
         GUI.Label(new Rect(10,25,100,25), "Enter Message");
         publishedMessage = GUI.TextArea(new Rect(110,25,150,60),publishedMessage,2000);
 
-        if (GUI.Button(new Rect(30, 100, 100, 20), "Publish"))
+        if (GUI.Button(new Rect(30, 100, 100, 30), "Publish"))
         {
             pubnub.Publish<string>(channel, publishedMessage, DisplayReturnMessage, DisplayErrorMessage);
             publishedMessage = "";
             showPublishPopupWindow = false;
         }
 
-        if (GUI.Button(new Rect(150, 100, 100, 20), "Cancel"))
+        if (GUI.Button(new Rect(150, 100, 100, 30), "Cancel"))
         {
             showPublishPopupWindow = false;
         }
@@ -392,48 +439,48 @@ public class PubnubExample : MonoBehaviour {
     {
         if (pubnub == null) return;
 
-		try{
-	        //UnityEngine.Debug.Log(DateTime.Now.ToLongTimeString() + " Update called " + pubnubApiResult.Length.ToString());            
-	        string recordTest;
-	        System.Text.StringBuilder sbResult = new System.Text.StringBuilder();
+        try{
+            //UnityEngine.Debug.Log(DateTime.Now.ToLongTimeString() + " Update called " + pubnubApiResult.Length.ToString());            
+            string recordTest;
+            System.Text.StringBuilder sbResult = new System.Text.StringBuilder();
 
-	        int existingLen = pubnubApiResult.Length;
-	        int newRecordLen = 0;
-	        sbResult.Append(pubnubApiResult);
+            int existingLen = pubnubApiResult.Length;
+            int newRecordLen = 0;
+            sbResult.Append(pubnubApiResult);
 
-	        if (recordQueue.TryPeek(out recordTest))
-	        {
-	            string currentRecord = "";
-	            while (recordQueue.TryDequeue(out currentRecord))
-	            {
-	                sbResult.AppendLine(currentRecord);
-	            }
+            if (recordQueue.TryPeek(out recordTest))
+            {
+                string currentRecord = "";
+                while (recordQueue.TryDequeue(out currentRecord))
+                {
+                    sbResult.AppendLine(currentRecord);
+                }
 
-	            pubnubApiResult = sbResult.ToString();
+                pubnubApiResult = sbResult.ToString();
 
-	            newRecordLen = pubnubApiResult.Length - existingLen;
-	            int windowLength = 1500;
+                newRecordLen = pubnubApiResult.Length - existingLen;
+                int windowLength = 600;
 
-	            if (pubnubApiResult.Length > windowLength)
-	            {
-	                bool trimmed = false;
-	                if (pubnubApiResult.Length > windowLength){
-	                    trimmed = true;
-	                    int lengthToTrim = (((pubnubApiResult.Length - windowLength) < pubnubApiResult.Length -newRecordLen)? pubnubApiResult.Length - windowLength : pubnubApiResult.Length - newRecordLen);
-	                    pubnubApiResult = pubnubApiResult.Substring(lengthToTrim);
-	                }
-	                if(trimmed)
-	                {
-	                    string prefix = "Output trimmed...\n";
+                if (pubnubApiResult.Length > windowLength)
+                {
+                    bool trimmed = false;
+                    if (pubnubApiResult.Length > windowLength){
+                        trimmed = true;
+                        int lengthToTrim = (((pubnubApiResult.Length - windowLength) < pubnubApiResult.Length -newRecordLen)? pubnubApiResult.Length - windowLength : pubnubApiResult.Length - newRecordLen);
+                        pubnubApiResult = pubnubApiResult.Substring(lengthToTrim);
+                    }
+                    if(trimmed)
+                    {
+                        string prefix = "Output trimmed...\n";
 
-	                    pubnubApiResult = prefix + pubnubApiResult;
-	                }
-	            }
-	        } 
-		}
-		catch (Exception ex){
-			Debug.Log ("Update exception:" + ex.ToString());
-		}
+                        pubnubApiResult = prefix + pubnubApiResult;
+                    }
+                }
+            } 
+        }
+        catch (Exception ex){
+            Debug.Log ("Update exception:" + ex.ToString());
+        }
     }
 
     void OnApplicationQuit()
@@ -472,14 +519,13 @@ public class PubnubExample : MonoBehaviour {
     void DisplayErrorMessage(string result)
     {
         //print(result);
+        UnityEngine.Debug.Log (string.Format("ERROR CALLBACK: {0}",result));
         AddToPubnubResultContainer(string.Format("ERROR CALLBACK: {0}",result));
     }
 
     void AddToPubnubResultContainer(string result)
     {
-		lock(recordQueue){
-        	recordQueue.Enqueue(result);
-		}
+        recordQueue.Enqueue(result);
     }
 
 }
