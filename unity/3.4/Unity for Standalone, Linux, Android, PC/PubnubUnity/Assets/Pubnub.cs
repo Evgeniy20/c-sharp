@@ -5259,7 +5259,7 @@ namespace PubNubMessaging.Core
         {
             try {
                 if(request != null){
-                    //request.KeepAlive = true;
+                    request.KeepAlive = true;
                     request.ContentType = "application/json";
                     return (HttpWebResponse)request.GetResponse ();
                 } else{
