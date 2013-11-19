@@ -370,10 +370,10 @@ public class PubnubExample : MonoBehaviour {
 
         GUI.Label(new Rect(10,25,100,25), "Enter Message");
         publishedMessage = GUI.TextArea(new Rect(110,25,150,60),publishedMessage,2000);
-
+		string stringMessage = publishedMessage;
         if (GUI.Button(new Rect(30, 100, 100, 30), "Publish"))
         {
-            pubnub.Publish<string>(channel, publishedMessage, DisplayReturnMessage, DisplayErrorMessage);
+			pubnub.Publish<string>(channel, stringMessage, DisplayReturnMessage, DisplayErrorMessage);
             publishedMessage = "";
             showPublishPopupWindow = false;
         }

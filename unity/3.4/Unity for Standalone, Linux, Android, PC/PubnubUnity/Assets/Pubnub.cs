@@ -1,4 +1,4 @@
-//Build Date: Nov 13, 2013
+//Build Date: Nov 19, 2013
 #if (UNITY_WEBPLAYER || UNITY_ANDROID|| UNITY_STANDALONE)
 #define USE_JSONFX
 #elif (UNITY_IOS)
@@ -87,10 +87,10 @@ namespace PubNubMessaging.Core
         #endif
 
         #if (UNITY_IOS || UNITY_ANDROID) 
-		Thread subscribeRequestThread;
-		Thread nonSubscribeRequestThread;
-		Thread subscribeRequestTimeoutThread;
-		Thread nonSubscribeRequestTimeoutThread;
+        Thread subscribeRequestThread;
+        Thread nonSubscribeRequestThread;
+        Thread subscribeRequestTimeoutThread;
+        Thread nonSubscribeRequestTimeoutThread;
         #endif
 
         // Common property changed event
@@ -296,7 +296,7 @@ namespace PubNubMessaging.Core
             }
         }
 
-        /**
+        /*        *
          * Pubnub instance initialization function
          * 
          * @param string publishKey.
@@ -574,7 +574,7 @@ namespace PubNubMessaging.Core
                 }
             }
         }
-        
+
 
         private void RemoveChannelDictionary()
         {
@@ -630,7 +630,7 @@ namespace PubNubMessaging.Core
                 if (_channelCallbacks.ContainsKey(keyChannel))
                 {
                     object tempChannelCallback;
-                    
+
                     bool removeKey = _channelCallbacks.TryRemove(keyChannel, out tempChannelCallback);
                     if (removeKey)
                     {
@@ -652,7 +652,7 @@ namespace PubNubMessaging.Core
             SystemEvents.PowerModeChanged -= new PowerModeChangedEventHandler(SystemEvents_PowerModeChanged);
         }
         #endif
-        /**
+        /*        *
          * PubNub 3.0 API
          * 
          * Prepare Pubnub messaging class initial state
@@ -667,7 +667,7 @@ namespace PubNubMessaging.Core
             this.Init(publishKey, subscribeKey, secretKey, cipherKey, sslOn);
         }
 
-        /**
+        /*        *
          * PubNub 2.0 Compatibility
          * 
          * Prepare Pubnub messaging class initial state
@@ -713,7 +713,7 @@ namespace PubNubMessaging.Core
             return ProcessRequest(url, ResponseType.History);
         }
 
-        /**
+        /*        *
          * Detailed History
          */
         public bool DetailedHistory(string channel, long start, long end, int count, bool reverse, Action<object> userCallback, Action<object> errorCallback)
@@ -854,8 +854,6 @@ namespace PubNubMessaging.Core
                         try
                         {
                             decryptMessage = aes.Decrypt(element.ToString());
-                            object decodeMessage = _jsonPluggableLibrary.DeserializeToObject(decryptMessage);
-                            receivedMsg.Add(decodeMessage);
                         }
                         catch (Exception ex)
                         {
@@ -866,10 +864,9 @@ namespace PubNubMessaging.Core
                             errorResult = _jsonPluggableLibrary.DeserializeToListOfObject(jsonErrorString);
                             errorResult.Add(string.Join(",", channels));
                             GoToCallback<T>(errorResult, errorCallback);
-
-                            object decodeMessage = decryptMessage;
-                            receivedMsg.Add(decodeMessage);
                         }
+                        object decodeMessage = (decryptMessage == "**DECRYPT ERROR**") ? decryptMessage : _jsonPluggableLibrary.DeserializeToObject(decryptMessage);
+                        receivedMsg.Add(decodeMessage);
                     }
                     returnMessage.Add(receivedMsg);
                 }
@@ -1255,7 +1252,7 @@ namespace PubNubMessaging.Core
             }
         }
 
-        #if(UNITY_IOS)
+        #if(UNITY_IOS || UNITY_ANDROID)
         void OnPubnubHeartBeatTimeoutCallbackUnity<T>(System.Object heartbeatState)
         {
             RequestState<T> currentState = heartbeatState as RequestState<T>;
@@ -1466,7 +1463,7 @@ namespace PubNubMessaging.Core
                     MultiplexExceptionHandler<T>(type,channels, userCallback, connectCallback, errorCallback, true, false);
                     return;
                 }
-        
+
                 #if(!UNITY_IOS && !UNITY_ANDROID)
                 if (overrideTcpKeepAlive)
                 {
@@ -1795,18 +1792,26 @@ namespace PubNubMessaging.Core
 
                 if (overrideTcpKeepAlive)
                 {
-                    #if (!UNITY_IOS)
-                    //Eventhough heart-beat is disabled, run one time to check internet connection by setting dueTime=0
+                    #if (UNITY_ANDROID)
+                    if(heartBeatTimer != null){
+                        heartBeatTimer.Dispose();
+                    }
                     heartBeatTimer = new System.Threading.Timer(
-                        new TimerCallback(OnPubnubHeartBeatTimeoutCallback<T>), pubnubRequestState, 0,
+                        new TimerCallback(OnPubnubHeartBeatTimeoutCallbackUnity<T>), pubnubRequestState, 0,
                         (-1 == _pubnubNetworkTcpCheckIntervalInSeconds) ? Timeout.Infinite : _pubnubNetworkTcpCheckIntervalInSeconds * 1000);
                     _channelHeartbeatTimer.AddOrUpdate(requestUri, heartBeatTimer, (key, oldState) => heartBeatTimer);
-                    #else
+                    #elif (UNITY_IOS)
                     if(heartBeatTimer != null){
                         heartBeatTimer.Dispose();
                     }
                     heartBeatTimer = new Timer(new TimerCallback(OnPubnubHeartBeatTimeoutCallbackUnity<T>), pubnubRequestState, 0,
-                                           _pubnubNetworkTcpCheckIntervalInSeconds * 1000);
+                                               _pubnubNetworkTcpCheckIntervalInSeconds * 1000);
+                    _channelHeartbeatTimer.AddOrUpdate(requestUri, heartBeatTimer, (key, oldState) => heartBeatTimer);
+                    #else
+                    //Eventhough heart-beat is disabled, run one time to check internet connection by setting dueTime=0
+                    heartBeatTimer = new System.Threading.Timer(
+                        new TimerCallback(OnPubnubHeartBeatTimeoutCallback<T>), pubnubRequestState, 0,
+                        (-1 == _pubnubNetworkTcpCheckIntervalInSeconds) ? Timeout.Infinite : _pubnubNetworkTcpCheckIntervalInSeconds * 1000);
                     _channelHeartbeatTimer.AddOrUpdate(requestUri, heartBeatTimer, (key, oldState) => heartBeatTimer);
                     #endif
                 }
@@ -1841,7 +1846,7 @@ namespace PubNubMessaging.Core
                         });
                         subscribeRequestThread.Name= "subscribeRequestThread";
                         subscribeRequestThread.Start ();
-						StartTimeoutThread <T>(pubnubRequestState, true);
+                        StartTimeoutThread <T>(pubnubRequestState, true);
                     }
                     else
                     {
@@ -1853,9 +1858,9 @@ namespace PubNubMessaging.Core
                         });
                         nonSubscribeRequestThread.Name= "nonSubscribeRequestThread";
                         nonSubscribeRequestThread.Start ();
-						StartTimeoutThread <T>(pubnubRequestState, false);
+                        StartTimeoutThread <T>(pubnubRequestState, false);
                     }
-                    
+
                     #endif
                 }
                 #elif(__MonoCS__)
@@ -1899,53 +1904,53 @@ namespace PubNubMessaging.Core
             }
         }
 
-		#if (UNITY_IOS)
+        #if (UNITY_IOS)
 
-		void TimoutDelegate<T> (RequestState<T> pubnubRequestState)
-		{
-			Thread.Sleep (GetTimeoutInSecondsForResponseType(pubnubRequestState.Type) * 1000);
-			if(pubnubRequestState != null && pubnubRequestState.Request!=null){
+        void TimoutDelegate<T> (RequestState<T> pubnubRequestState)
+        {
+            Thread.Sleep (GetTimeoutInSecondsForResponseType(pubnubRequestState.Type) * 1000);
+            if(pubnubRequestState != null && pubnubRequestState.Request!=null){
 
-				if (pubnubRequestState.Type == ResponseType.Subscribe || pubnubRequestState.Type == ResponseType.Presence){
-					if(subscribeRequestThread != null && subscribeRequestThread.IsAlive){
-						subscribeRequestThread.Join (1);
-					}
-				} else {
-					if(nonSubscribeRequestThread != null && nonSubscribeRequestThread.IsAlive){    
-						nonSubscribeRequestThread.Join (1);
-					}
-				}
-				OnPubnubWebRequestTimeout<T>(pubnubRequestState, true);
-			}
+                if (pubnubRequestState.Type == ResponseType.Subscribe || pubnubRequestState.Type == ResponseType.Presence){
+                    if(subscribeRequestThread != null && subscribeRequestThread.IsAlive){
+                        subscribeRequestThread.Join (1);
+                    }
+                } else {
+                    if(nonSubscribeRequestThread != null && nonSubscribeRequestThread.IsAlive){    
+                        nonSubscribeRequestThread.Join (1);
+                    }
+                }
+                OnPubnubWebRequestTimeout<T>(pubnubRequestState, true);
+            }
 
-		}
+        }
 
-		void StartTimeoutThread <T> (RequestState<T> pubnubRequestState, bool isSubscribeRequest)
-		{
-			if (isSubscribeRequest) {
-				if(subscribeRequestTimeoutThread != null && subscribeRequestTimeoutThread.IsAlive){    
-					subscribeRequestTimeoutThread.Join (1);
-				}
+        void StartTimeoutThread <T> (RequestState<T> pubnubRequestState, bool isSubscribeRequest)
+        {
+            if (isSubscribeRequest) {
+                if(subscribeRequestTimeoutThread != null && subscribeRequestTimeoutThread.IsAlive){    
+                    subscribeRequestTimeoutThread.Join (1);
+                }
 
-				subscribeRequestTimeoutThread = new Thread (delegate (object state) {
-					TimoutDelegate <T>(pubnubRequestState);
-				});
-				subscribeRequestTimeoutThread.Name = "subscribeRequestTimeoutThread";
-				subscribeRequestTimeoutThread.Start ();
-			} else {
-				if(nonSubscribeRequestTimeoutThread != null && nonSubscribeRequestTimeoutThread.IsAlive){    
-					nonSubscribeRequestTimeoutThread.Join (1);
-				}
+                subscribeRequestTimeoutThread = new Thread (delegate (object state) {
+                    TimoutDelegate <T>(pubnubRequestState);
+                });
+                subscribeRequestTimeoutThread.Name = "subscribeRequestTimeoutThread";
+                subscribeRequestTimeoutThread.Start ();
+            } else {
+                if(nonSubscribeRequestTimeoutThread != null && nonSubscribeRequestTimeoutThread.IsAlive){    
+                    nonSubscribeRequestTimeoutThread.Join (1);
+                }
 
-				nonSubscribeRequestTimeoutThread = new Thread (delegate (object state) {
-					TimoutDelegate <T>(pubnubRequestState);
-				});
-				nonSubscribeRequestTimeoutThread.Name = "nonSubscribeRequestTimeoutThread";
-				nonSubscribeRequestTimeoutThread.Start ();
-			}
-		}
-		#endif
-		#if (UNITY_IOS || UNITY_ANDROID)
+                nonSubscribeRequestTimeoutThread = new Thread (delegate (object state) {
+                    TimoutDelegate <T>(pubnubRequestState);
+                });
+                nonSubscribeRequestTimeoutThread.Name = "nonSubscribeRequestTimeoutThread";
+                nonSubscribeRequestTimeoutThread.Start ();
+            }
+        }
+        #endif
+        #if (UNITY_IOS)
         void SendRequest<T> (RequestState<T> pubnubRequestState, PubnubWebRequest request)
         {
             CustomEventArgs<T> cea = new CustomEventArgs<T>();
@@ -1976,6 +1981,7 @@ namespace PubNubMessaging.Core
                                     }
                                 }
                             }
+                            response.Close();
                         } 
                     }
                 } 
@@ -1991,16 +1997,16 @@ namespace PubNubMessaging.Core
                 cea.message = ex.ToString();
                 UrlProcessResponseCallbackNonAsync(cea); 
             }
-			finally
-			{
-				#if(UNITY_IOS)
-				GC.Collect();
-				#endif
-			}
+            finally
+            {
+                #if(UNITY_IOS)
+                GC.Collect();
+                #endif
+            }
         }
         #endif
-        
-        #if(UNITY_ANDROID)      
+
+        #if(UNITY_ANDROID || MONOTOUCH || __IOS__)      
         /// <summary>
         /// Workaround for the bug described here 
         /// https://bugzilla.xamarin.com/show_bug.cgi?id=6501
@@ -2084,7 +2090,7 @@ namespace PubNubMessaging.Core
                         UrlRequestCommonExceptionHandler<T>(cea.pubnubRequestState.Type, cea.pubnubRequestState.Channels, false, cea.pubnubRequestState.UserCallback, cea.pubnubRequestState.ConnectCallback, cea.pubnubRequestState.ErrorCallback, false);
                     } else {
                         var result = WrapResultBasedOnResponseType (cea.pubnubRequestState.Type, cea.message, cea.pubnubRequestState.Channels, cea.pubnubRequestState.Reconnect, cea.pubnubRequestState.Timetoken, cea.pubnubRequestState.ErrorCallback);
-                            
+
                         ProcessResponseCallbacks<T> (result, cea.pubnubRequestState);            
                     }
                 }
@@ -2298,7 +2304,7 @@ namespace PubNubMessaging.Core
         {
             #if(MONODROID || __ANDROID__)
             SslStream sslStream = new SslStream(netStream, true, Validator, null);
-            #elif(UNITY_ANDROID)
+            #elif(UNITY_ANDROID|| MONOTOUCH || __IOS__)
             ServicePointManager.ServerCertificateValidationCallback = ValidatorUnity;
             SslStream sslStream = new SslStream(netStream, true, ValidatorUnity, null);
             #else
@@ -2624,7 +2630,7 @@ namespace PubNubMessaging.Core
             #endif
             UrlRequestCommonExceptionHandler<T>(asynchRequestState.Type, asynchRequestState.Channels, asynchRequestState.Timeout,
                                                 asynchRequestState.UserCallback, asynchRequestState.ConnectCallback, asynchRequestState.ErrorCallback, reconnect);
-            
+
         }
 
         void ProcessResponseCallbacks<T>(List<object> result, RequestState<T> asynchRequestState)
@@ -2656,10 +2662,10 @@ namespace PubNubMessaging.Core
                         LoggingMethod.WriteToLog(string.Format("DateTime {0}, Message: {1}", DateTime.Now.ToString(), cea.message), LoggingMethod.LevelError);
                         WebException webEx;
                         if ((cea.message.Contains ("NameResolutionFailure")
-                         || cea.message.Contains ("ConnectFailure")
-                         || cea.message.Contains ("ServerProtocolViolation")
-                         || cea.message.Contains ("ProtocolError")
-                         )){
+                             || cea.message.Contains ("ConnectFailure")
+                             || cea.message.Contains ("ServerProtocolViolation")
+                             || cea.message.Contains ("ProtocolError")
+                             )){
                             webEx = new WebException("Network connnect error", WebExceptionStatus.ConnectFailure);
                         }else {
                             webEx = new WebException(cea.message);
@@ -3422,7 +3428,6 @@ namespace PubNubMessaging.Core
                                     PubnubCrypto aes = new PubnubCrypto(this.cipherKey);
                                     string decryptMessage = aes.Decrypt(messageList[messageIndex].ToString());
                                     object decodeMessage = (decryptMessage == "**DECRYPT ERROR**") ? decryptMessage : _jsonPluggableLibrary.DeserializeToObject(decryptMessage);
-
                                     itemMessage.Add(decodeMessage);
                                 }
                                 else
@@ -4244,76 +4249,76 @@ namespace PubNubMessaging.Core
             Decode(x, 0, block, offset, 64);
 
             // Round 1
-            FF(ref a, b, c, d, x[0], S11, 0xd76aa478); /* 1 */
-            FF(ref d, a, b, c, x[1], S12, 0xe8c7b756); /* 2 */
-            FF(ref c, d, a, b, x[2], S13, 0x242070db); /* 3 */
-            FF(ref b, c, d, a, x[3], S14, 0xc1bdceee); /* 4 */
-            FF(ref a, b, c, d, x[4], S11, 0xf57c0faf); /* 5 */
-            FF(ref d, a, b, c, x[5], S12, 0x4787c62a); /* 6 */
-            FF(ref c, d, a, b, x[6], S13, 0xa8304613); /* 7 */
-            FF(ref b, c, d, a, x[7], S14, 0xfd469501); /* 8 */
-            FF(ref a, b, c, d, x[8], S11, 0x698098d8); /* 9 */
-            FF(ref d, a, b, c, x[9], S12, 0x8b44f7af); /* 10 */
-            FF(ref c, d, a, b, x[10], S13, 0xffff5bb1); /* 11 */
-            FF(ref b, c, d, a, x[11], S14, 0x895cd7be); /* 12 */
-            FF(ref a, b, c, d, x[12], S11, 0x6b901122); /* 13 */
-            FF(ref d, a, b, c, x[13], S12, 0xfd987193); /* 14 */
-            FF(ref c, d, a, b, x[14], S13, 0xa679438e); /* 15 */
-            FF(ref b, c, d, a, x[15], S14, 0x49b40821); /* 16 */
+            FF(ref a, b, c, d, x[0], S11, 0xd76aa478); /*         1 */
+            FF(ref d, a, b, c, x[1], S12, 0xe8c7b756); /*         2 */
+            FF(ref c, d, a, b, x[2], S13, 0x242070db); /*         3 */
+            FF(ref b, c, d, a, x[3], S14, 0xc1bdceee); /*         4 */
+            FF(ref a, b, c, d, x[4], S11, 0xf57c0faf); /*         5 */
+            FF(ref d, a, b, c, x[5], S12, 0x4787c62a); /*         6 */
+            FF(ref c, d, a, b, x[6], S13, 0xa8304613); /*         7 */
+            FF(ref b, c, d, a, x[7], S14, 0xfd469501); /*         8 */
+            FF(ref a, b, c, d, x[8], S11, 0x698098d8); /*         9 */
+            FF(ref d, a, b, c, x[9], S12, 0x8b44f7af); /*         10 */
+            FF(ref c, d, a, b, x[10], S13, 0xffff5bb1); /*         11 */
+            FF(ref b, c, d, a, x[11], S14, 0x895cd7be); /*         12 */
+            FF(ref a, b, c, d, x[12], S11, 0x6b901122); /*         13 */
+            FF(ref d, a, b, c, x[13], S12, 0xfd987193); /*         14 */
+            FF(ref c, d, a, b, x[14], S13, 0xa679438e); /*         15 */
+            FF(ref b, c, d, a, x[15], S14, 0x49b40821); /*         16 */
 
             // Round 2
-            GG(ref a, b, c, d, x[1], S21, 0xf61e2562); /* 17 */
-            GG(ref d, a, b, c, x[6], S22, 0xc040b340); /* 18 */
-            GG(ref c, d, a, b, x[11], S23, 0x265e5a51); /* 19 */
-            GG(ref b, c, d, a, x[0], S24, 0xe9b6c7aa); /* 20 */
-            GG(ref a, b, c, d, x[5], S21, 0xd62f105d); /* 21 */
-            GG(ref d, a, b, c, x[10], S22, 0x2441453); /* 22 */
-            GG(ref c, d, a, b, x[15], S23, 0xd8a1e681); /* 23 */
-            GG(ref b, c, d, a, x[4], S24, 0xe7d3fbc8); /* 24 */
-            GG(ref a, b, c, d, x[9], S21, 0x21e1cde6); /* 25 */
-            GG(ref d, a, b, c, x[14], S22, 0xc33707d6); /* 26 */
-            GG(ref c, d, a, b, x[3], S23, 0xf4d50d87); /* 27 */
-            GG(ref b, c, d, a, x[8], S24, 0x455a14ed); /* 28 */
-            GG(ref a, b, c, d, x[13], S21, 0xa9e3e905); /* 29 */
-            GG(ref d, a, b, c, x[2], S22, 0xfcefa3f8); /* 30 */
-            GG(ref c, d, a, b, x[7], S23, 0x676f02d9); /* 31 */
-            GG(ref b, c, d, a, x[12], S24, 0x8d2a4c8a); /* 32 */
+            GG(ref a, b, c, d, x[1], S21, 0xf61e2562); /*         17 */
+            GG(ref d, a, b, c, x[6], S22, 0xc040b340); /*         18 */
+            GG(ref c, d, a, b, x[11], S23, 0x265e5a51); /*         19 */
+            GG(ref b, c, d, a, x[0], S24, 0xe9b6c7aa); /*         20 */
+            GG(ref a, b, c, d, x[5], S21, 0xd62f105d); /*         21 */
+            GG(ref d, a, b, c, x[10], S22, 0x2441453); /*         22 */
+            GG(ref c, d, a, b, x[15], S23, 0xd8a1e681); /*         23 */
+            GG(ref b, c, d, a, x[4], S24, 0xe7d3fbc8); /*         24 */
+            GG(ref a, b, c, d, x[9], S21, 0x21e1cde6); /*         25 */
+            GG(ref d, a, b, c, x[14], S22, 0xc33707d6); /*         26 */
+            GG(ref c, d, a, b, x[3], S23, 0xf4d50d87); /*         27 */
+            GG(ref b, c, d, a, x[8], S24, 0x455a14ed); /*         28 */
+            GG(ref a, b, c, d, x[13], S21, 0xa9e3e905); /*         29 */
+            GG(ref d, a, b, c, x[2], S22, 0xfcefa3f8); /*         30 */
+            GG(ref c, d, a, b, x[7], S23, 0x676f02d9); /*         31 */
+            GG(ref b, c, d, a, x[12], S24, 0x8d2a4c8a); /*         32 */
 
             // Round 3
-            HH(ref a, b, c, d, x[5], S31, 0xfffa3942); /* 33 */
-            HH(ref d, a, b, c, x[8], S32, 0x8771f681); /* 34 */
-            HH(ref c, d, a, b, x[11], S33, 0x6d9d6122); /* 35 */
-            HH(ref b, c, d, a, x[14], S34, 0xfde5380c); /* 36 */
-            HH(ref a, b, c, d, x[1], S31, 0xa4beea44); /* 37 */
-            HH(ref d, a, b, c, x[4], S32, 0x4bdecfa9); /* 38 */
-            HH(ref c, d, a, b, x[7], S33, 0xf6bb4b60); /* 39 */
-            HH(ref b, c, d, a, x[10], S34, 0xbebfbc70); /* 40 */
-            HH(ref a, b, c, d, x[13], S31, 0x289b7ec6); /* 41 */
-            HH(ref d, a, b, c, x[0], S32, 0xeaa127fa); /* 42 */
-            HH(ref c, d, a, b, x[3], S33, 0xd4ef3085); /* 43 */
-            HH(ref b, c, d, a, x[6], S34, 0x4881d05); /* 44 */
-            HH(ref a, b, c, d, x[9], S31, 0xd9d4d039); /* 45 */
-            HH(ref d, a, b, c, x[12], S32, 0xe6db99e5); /* 46 */
-            HH(ref c, d, a, b, x[15], S33, 0x1fa27cf8); /* 47 */
-            HH(ref b, c, d, a, x[2], S34, 0xc4ac5665); /* 48 */
+            HH(ref a, b, c, d, x[5], S31, 0xfffa3942); /*         33 */
+            HH(ref d, a, b, c, x[8], S32, 0x8771f681); /*         34 */
+            HH(ref c, d, a, b, x[11], S33, 0x6d9d6122); /*         35 */
+            HH(ref b, c, d, a, x[14], S34, 0xfde5380c); /*         36 */
+            HH(ref a, b, c, d, x[1], S31, 0xa4beea44); /*         37 */
+            HH(ref d, a, b, c, x[4], S32, 0x4bdecfa9); /*         38 */
+            HH(ref c, d, a, b, x[7], S33, 0xf6bb4b60); /*         39 */
+            HH(ref b, c, d, a, x[10], S34, 0xbebfbc70); /*         40 */
+            HH(ref a, b, c, d, x[13], S31, 0x289b7ec6); /*         41 */
+            HH(ref d, a, b, c, x[0], S32, 0xeaa127fa); /*         42 */
+            HH(ref c, d, a, b, x[3], S33, 0xd4ef3085); /*         43 */
+            HH(ref b, c, d, a, x[6], S34, 0x4881d05); /*         44 */
+            HH(ref a, b, c, d, x[9], S31, 0xd9d4d039); /*         45 */
+            HH(ref d, a, b, c, x[12], S32, 0xe6db99e5); /*         46 */
+            HH(ref c, d, a, b, x[15], S33, 0x1fa27cf8); /*         47 */
+            HH(ref b, c, d, a, x[2], S34, 0xc4ac5665); /*         48 */
 
             // Round 4
-            II(ref a, b, c, d, x[0], S41, 0xf4292244); /* 49 */
-            II(ref d, a, b, c, x[7], S42, 0x432aff97); /* 50 */
-            II(ref c, d, a, b, x[14], S43, 0xab9423a7); /* 51 */
-            II(ref b, c, d, a, x[5], S44, 0xfc93a039); /* 52 */
-            II(ref a, b, c, d, x[12], S41, 0x655b59c3); /* 53 */
-            II(ref d, a, b, c, x[3], S42, 0x8f0ccc92); /* 54 */
-            II(ref c, d, a, b, x[10], S43, 0xffeff47d); /* 55 */
-            II(ref b, c, d, a, x[1], S44, 0x85845dd1); /* 56 */
-            II(ref a, b, c, d, x[8], S41, 0x6fa87e4f); /* 57 */
-            II(ref d, a, b, c, x[15], S42, 0xfe2ce6e0); /* 58 */
-            II(ref c, d, a, b, x[6], S43, 0xa3014314); /* 59 */
-            II(ref b, c, d, a, x[13], S44, 0x4e0811a1); /* 60 */
-            II(ref a, b, c, d, x[4], S41, 0xf7537e82); /* 61 */
-            II(ref d, a, b, c, x[11], S42, 0xbd3af235); /* 62 */
-            II(ref c, d, a, b, x[2], S43, 0x2ad7d2bb); /* 63 */
-            II(ref b, c, d, a, x[9], S44, 0xeb86d391); /* 64 */
+            II(ref a, b, c, d, x[0], S41, 0xf4292244); /*         49 */
+            II(ref d, a, b, c, x[7], S42, 0x432aff97); /*         50 */
+            II(ref c, d, a, b, x[14], S43, 0xab9423a7); /*         51 */
+            II(ref b, c, d, a, x[5], S44, 0xfc93a039); /*         52 */
+            II(ref a, b, c, d, x[12], S41, 0x655b59c3); /*         53 */
+            II(ref d, a, b, c, x[3], S42, 0x8f0ccc92); /*         54 */
+            II(ref c, d, a, b, x[10], S43, 0xffeff47d); /*         55 */
+            II(ref b, c, d, a, x[1], S44, 0x85845dd1); /*         56 */
+            II(ref a, b, c, d, x[8], S41, 0x6fa87e4f); /*         57 */
+            II(ref d, a, b, c, x[15], S42, 0xfe2ce6e0); /*         58 */
+            II(ref c, d, a, b, x[6], S43, 0xa3014314); /*         59 */
+            II(ref b, c, d, a, x[13], S44, 0x4e0811a1); /*         60 */
+            II(ref a, b, c, d, x[4], S41, 0xf7537e82); /*         61 */
+            II(ref d, a, b, c, x[11], S42, 0xbd3af235); /*         62 */
+            II(ref c, d, a, b, x[2], S43, 0x2ad7d2bb); /*         63 */
+            II(ref b, c, d, a, x[9], S44, 0xeb86d391); /*         64 */
 
             state[0] += a;
             state[1] += b;
@@ -4576,7 +4581,7 @@ namespace PubNubMessaging.Core
             return strKeySHA256Hash.ToLower();
         }
 
-        /**
+        /*    *
          * EncryptOrDecrypt
          * 
          * Basic function for encrypt or decrypt a string
@@ -4684,7 +4689,7 @@ namespace PubNubMessaging.Core
             //if(;
             return Regex.Replace(
                 value,
-                @"\\u(?<Value>[a-zA-Z0-9]{4})",
+                @"            \\u(?<Value>[a-zA-Z0-9]{4})",
                 m => {
                 return ((char) int.Parse( m.Groups["Value"].Value, NumberStyles.HexNumber )).ToString();
             }     
@@ -4925,6 +4930,7 @@ namespace PubNubMessaging.Core
                 #elif (UNITY_IOS || UNITY_ANDROID)
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create("http://pubsub.pubnub.com");
                 request.ContentType = "application/json";
+
                 if(request!= null){
                     using(WebResponse response = request.GetResponse ()){
                         if(response != null){
@@ -4942,6 +4948,7 @@ namespace PubNubMessaging.Core
                                     }
                                 }
                             }
+                            response.Close();
                         } 
                     }
                 } 
@@ -4975,12 +4982,12 @@ namespace PubNubMessaging.Core
             {
                 ParseCheckSocketConnectException<T>(ex, channels, errorCallback, callback);
             }
-			finally
-			{
-				#if(UNITY_IOS)
-				GC.Collect();
-				#endif
-			}
+            finally
+            {
+                #if(UNITY_IOS)
+                GC.Collect();
+                #endif
+            }
             #if (!UNITY_ANDROID && !UNITY_IOS)
             mres.Set();
             #endif
@@ -5253,8 +5260,8 @@ namespace PubNubMessaging.Core
             this.ServicePoint = this.request.ServicePoint;
             #endif
         }
-
-        #if (UNITY_IOS || UNITY_ANDROID)
+    
+        #if (UNITY_IOS)
         public override WebResponse GetResponse ()
         {
             try {
@@ -5274,7 +5281,7 @@ namespace PubNubMessaging.Core
             }
         }
         #endif
-    
+
         public override void Abort()
         {
             try {
@@ -5796,7 +5803,7 @@ namespace PubNubMessaging.Core
         WWW www;
 
         public void Start<T>(string url, RequestState<T> pubnubRequestState, int timeout) {
-             
+
             StartCoroutine(RunCoroutine<T>(url, pubnubRequestState, timeout));
             ThreadPool.QueueUserWorkItem (delegate(object state){    
                 Thread.Sleep (timeout);
