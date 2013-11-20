@@ -50,9 +50,9 @@ public class PubnubExample : MonoBehaviour {
     //GameObject PubnubApiResult;
     Vector2 scrollPosition = Vector2.zero;
     string pubnubApiResult = "";
-
+    #if(UNITY_IOS)
     bool requestInProcess = false;
-
+    #endif
     bool showPublishPopupWindow = false;
 
     Rect publishWindowRect = new Rect(60, 365, 300, 150);
@@ -340,7 +340,9 @@ public class PubnubExample : MonoBehaviour {
             } else if ((PubnubState)pubnubState == PubnubState.DisconnectRetry) {
                 AddToPubnubResultContainer ("Running Disconnect Retry");
                 pubnub.TerminateCurrentSubscriberRequest();
+                #if(UNITY_IOS)
                 requestInProcess = false;
+                #endif
             }
         }
         catch (Exception ex)
@@ -370,10 +372,10 @@ public class PubnubExample : MonoBehaviour {
 
         GUI.Label(new Rect(10,25,100,25), "Enter Message");
         publishedMessage = GUI.TextArea(new Rect(110,25,150,60),publishedMessage,2000);
-
+        string stringMessage = publishedMessage;
         if (GUI.Button(new Rect(30, 100, 100, 30), "Publish"))
         {
-            pubnub.Publish<string>(channel, publishedMessage, DisplayReturnMessage, DisplayErrorMessage);
+            pubnub.Publish<string>(channel, stringMessage, DisplayReturnMessage, DisplayErrorMessage);
             publishedMessage = "";
             showPublishPopupWindow = false;
         }

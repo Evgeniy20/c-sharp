@@ -1,4 +1,4 @@
-//Build Date: Nov 19, 2013
+//Build Date: Nov 20, 2013
 #if (UNITY_WEBPLAYER || UNITY_ANDROID|| UNITY_STANDALONE)
 #define USE_JSONFX
 #elif (UNITY_IOS)
@@ -80,17 +80,24 @@ namespace PubNubMessaging.Core
         bool _enableResumeOnReconnect = true;
         bool overrideTcpKeepAlive = true;
         bool _enableJsonEncodingForPublish = true;
-        const LoggingMethod.Level pubnubLogLevel = LoggingMethod.Level.Verbose;
+        const LoggingMethod.Level pubnubLogLevel = LoggingMethod.Level.Error;
 
         #if (!SILVERLIGHT && !WINDOWS_PHONE)
         bool pubnubEnableProxyConfig = true;
         #endif
 
-        #if (UNITY_IOS || UNITY_ANDROID) 
+        #if (UNITY_IOS) 
         Thread subscribeRequestThread;
         Thread nonSubscribeRequestThread;
         Thread subscribeRequestTimeoutThread;
         Thread nonSubscribeRequestTimeoutThread;
+        PubnubWebRequest subscribeWebRequest;
+        PubnubWebRequest nonSubscribeWebRequest;
+        #endif
+
+        #if(UNITY_ANDROID)
+        IAsyncResult asyncResultSubscribe;
+        IAsyncResult asyncResultNonSubscribe;
         #endif
 
         // Common property changed event
@@ -1831,18 +1838,32 @@ namespace PubNubMessaging.Core
                 else
                 {
                     #if (UNITY_ANDROID)
-                    IAsyncResult asyncResult = request.BeginGetResponse(new AsyncCallback(UrlProcessResponseCallback<T>), pubnubRequestState);
-                    if (!asyncResult.AsyncWaitHandle.WaitOne(GetTimeoutInSecondsForResponseType(pubnubRequestState.Type) * 1000))
-                    {
-                        OnPubnubWebRequestTimeout<T>(pubnubRequestState, true);
+                    if (pubnubRequestState.Type == ResponseType.Subscribe || pubnubRequestState.Type == ResponseType.Presence){
+                        if(asyncResultSubscribe != null){
+                            CloseOpenRequest<T>(asyncResultSubscribe);
+                        }
+                        asyncResultSubscribe = request.BeginGetResponse(new AsyncCallback(UrlProcessResponseCallback<T>), pubnubRequestState);
+                        if (!asyncResultSubscribe.AsyncWaitHandle.WaitOne(GetTimeoutInSecondsForResponseType(pubnubRequestState.Type) * 1000)){
+                            OnPubnubWebRequestTimeout<T>(pubnubRequestState, true);
+                        }
+                    } else {
+                        if(asyncResultNonSubscribe != null){
+                            CloseOpenRequest<T>(asyncResultNonSubscribe);
+                        }
+                        asyncResultNonSubscribe = request.BeginGetResponse(new AsyncCallback(UrlProcessResponseCallback<T>), pubnubRequestState);
+                        if (!asyncResultNonSubscribe.AsyncWaitHandle.WaitOne(GetTimeoutInSecondsForResponseType(pubnubRequestState.Type) * 1000)){
+                            OnPubnubWebRequestTimeout<T>(pubnubRequestState, true);
+                        }
                     }
                     #elif (UNITY_IOS)
                     if (pubnubRequestState.Type == ResponseType.Subscribe || pubnubRequestState.Type == ResponseType.Presence){
                         if(subscribeRequestThread != null && subscribeRequestThread.IsAlive){
+														//AbortOpenRequest(subscribeWebRequest);
                             subscribeRequestThread.Join (1);
                         }
+                        subscribeWebRequest = request;
                         subscribeRequestThread = new Thread(delegate (object state){
-                            SendRequest<T>(pubnubRequestState, request);
+                            SendRequestUnityiOS<T>(pubnubRequestState, request);
                         });
                         subscribeRequestThread.Name= "subscribeRequestThread";
                         subscribeRequestThread.Start ();
@@ -1851,10 +1872,12 @@ namespace PubNubMessaging.Core
                     else
                     {
                         if(nonSubscribeRequestThread != null && nonSubscribeRequestThread.IsAlive){    
+														//AbortOpenRequest(nonSubscribeWebRequest);
                             nonSubscribeRequestThread.Join (1);
                         }
+                        nonSubscribeWebRequest = request;
                         nonSubscribeRequestThread = new Thread(delegate (object state){
-                            SendRequest<T>(pubnubRequestState, request);
+                            SendRequestUnityiOS<T>(pubnubRequestState, request);
                         });
                         nonSubscribeRequestThread.Name= "nonSubscribeRequestThread";
                         nonSubscribeRequestThread.Start ();
@@ -1904,7 +1927,42 @@ namespace PubNubMessaging.Core
             }
         }
 
+
+        #if (UNITY_ANDROID)
+        void CloseOpenRequest<T> (IAsyncResult asyncResult)
+        {
+            try
+            {
+                if(!asyncResult.IsCompleted){
+                    RequestState<T> asynchRequestState = asyncResult.AsyncState as RequestState<T>;
+
+                    PubnubWebRequest asyncWebRequest = asynchRequestState.Request as PubnubWebRequest;
+                    asyncWebRequest.Abort();
+                    asyncResult.AsyncWaitHandle.Close();
+                }
+            }
+            catch(Exception ex)
+            {
+                LoggingMethod.WriteToLog(string.Format("DateTime {0}, Response:{1}", DateTime.Now.ToString(), ex.ToString()), LoggingMethod.LevelError);
+            }
+        }
+        #endif
+
         #if (UNITY_IOS)
+
+        void AbortOpenRequest(PubnubWebRequest webRequest){
+            try
+            {
+                if(webRequest != null){
+                    webRequest.Abort();
+					webRequest = null;
+                }
+            }
+            catch(Exception ex)
+            {
+                LoggingMethod.WriteToLog(string.Format("DateTime {0}, Response:{1}", DateTime.Now.ToString(), ex.ToString()), LoggingMethod.LevelError);
+            }
+        }
 
         void TimoutDelegate<T> (RequestState<T> pubnubRequestState)
         {
@@ -1951,7 +2009,7 @@ namespace PubNubMessaging.Core
         }
         #endif
         #if (UNITY_IOS)
-        void SendRequest<T> (RequestState<T> pubnubRequestState, PubnubWebRequest request)
+        void SendRequestUnityiOS<T> (RequestState<T> pubnubRequestState, PubnubWebRequest request)
         {
             CustomEventArgs<T> cea = new CustomEventArgs<T>();
             cea.pubnubRequestState = pubnubRequestState;
@@ -2107,9 +2165,9 @@ namespace PubNubMessaging.Core
         {
             GameObject gobj = new GameObject ();
             CoroutineClass coroutine = gobj.AddComponent<CoroutineClass>();
-            int timeout = GetTimeoutInSecondsForResponseType (pubnubRequestState.Type) * 1000;
-            coroutine.Start<T>(requestUri.OriginalString, pubnubRequestState, timeout);
             coroutine.CoroutineComplete += CoroutineCompleteHandler<T>;
+            int timeout = GetTimeoutInSecondsForResponseType (pubnubRequestState.Type) * 1000;
+            coroutine.InitAndRun<T> (requestUri.OriginalString, pubnubRequestState, timeout);
         }
         #endif
 
@@ -2763,6 +2821,7 @@ namespace PubNubMessaging.Core
             }
 
             PubnubWebRequest asyncWebRequest = asynchRequestState.Request as PubnubWebRequest;
+
             try
             {
                 if (asyncWebRequest != null) 
@@ -5802,9 +5861,9 @@ namespace PubNubMessaging.Core
         private bool isComplete = false;
         WWW www;
 
-        public void Start<T>(string url, RequestState<T> pubnubRequestState, int timeout) {
-
-            StartCoroutine(RunCoroutine<T>(url, pubnubRequestState, timeout));
+        public void InitAndRun<T>(string url, RequestState<T> pubnubRequestState, int timeout)
+        {
+            StartCoroutine(RunCoroutine(url, pubnubRequestState, timeout));
             ThreadPool.QueueUserWorkItem (delegate(object state){    
                 Thread.Sleep (timeout);
                 if(!isComplete){
@@ -5816,6 +5875,9 @@ namespace PubNubMessaging.Core
                 }
                 Thread.CurrentThread.Join(1);
             });
+        }
+
+        public void Start() {
         }
 
         public void FireEvent<T>(string message, bool isError, bool isTimeout, RequestState<T> pubnubRequestState){
