@@ -503,25 +503,28 @@ public class PubnubExample : MonoBehaviour {
     void DisplayReturnMessage(string result)
     {
         //print(result);
+        UnityEngine.Debug.Log (string.Format("REGULAR CALLBACK LOG: {0}",result));
         AddToPubnubResultContainer(string.Format("REGULAR CALLBACK: {0}",result));
     }
 
     void DisplayConnectStatusMessage(string result)
     {
         //print(result);
+        UnityEngine.Debug.Log (string.Format("CONNECT CALLBACK LOG: {0}",result));
         AddToPubnubResultContainer(string.Format("CONNECT CALLBACK: {0}",result));
     }
 
     void DisplayDisconnectStatusMessage(string result)
     {
         //print(result);
+        UnityEngine.Debug.Log (string.Format("DISCONNECT CALLBACK LOG: {0}",result));
         AddToPubnubResultContainer(string.Format("DISCONNECT CALLBACK: {0}",result));
     }
 
     void DisplayErrorMessage(string result)
     {
         //print(result);
-        UnityEngine.Debug.Log (string.Format("ERROR CALLBACK: {0}",result));
+        UnityEngine.Debug.Log (string.Format("ERROR CALLBACK LOG: {0}",result));
         AddToPubnubResultContainer(string.Format("ERROR CALLBACK: {0}",result));
     }
 
